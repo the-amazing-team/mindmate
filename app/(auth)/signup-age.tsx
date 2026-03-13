@@ -15,8 +15,12 @@ const AGE_GROUPS = [
   { id: 'senior', label: '50+', icon: '✨' },
 ];
 
+import { useLocalSearchParams } from 'expo-router';
+
 export default function SignupAgeScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
+  const { email, name, password } = params;
   const [selectedAge, setSelectedAge] = useState<string | null>(null);
 
   return (
@@ -60,7 +64,14 @@ export default function SignupAgeScreen() {
       <View style={styles.footer}>
         <TouchableOpacity 
           style={[styles.nextButton, !selectedAge && styles.disabledButton]}
-          onPress={() => selectedAge && router.push('/(auth)/signup-personality')}
+          onPress={() => {
+            if (selectedAge) {
+              router.push({
+                pathname: '/(auth)/signup-personality',
+                params: { ...params, age_group: selectedAge }
+              });
+            }
+          }}
           disabled={!selectedAge}
         >
           <LinearGradient

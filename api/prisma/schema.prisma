@@ -7,18 +7,24 @@ generator client {
 
 datasource db {
   provider  = "postgresql"
-  // Uses connection pooling via pgBouncer (recommended for serverless/edge)
   url       = env("DATABASE_URL")
-  // Uses direct connection for migrations
   directUrl = env("DIRECT_URL")
 }
 
-// Add your models here
-// Example:
-// model User {
-//   id        String   @id @default(cuid())
-//   email     String   @unique
-//   name      String?
-//   createdAt DateTime @default(now())
-//   updatedAt DateTime @updatedAt
-// }
+model User {
+  id               String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email            String          @unique
+  password_hash    String
+  name             String
+  age_group        String?
+  personality_type PersonalityType?
+  created_at       DateTime        @default(now())
+}
+
+enum PersonalityType {
+  OPENNESS
+  CONSCIENTIOUSNESS
+  EXTRAVERSION
+  AGREEABLENESS
+  NEUROTICISM
+}
