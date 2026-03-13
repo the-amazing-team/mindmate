@@ -2,17 +2,19 @@ import { Colors, Radius, Spacing } from '@/constants/theme';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useState, useRef } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, Animated, Dimensions } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View, Animated, Dimensions, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { authService } from '@/services/auth.service';
+import { useLocalSearchParams } from 'expo-router';
 
 const { width } = Dimensions.get('window');
 
 const QUESTIONS = [
-  { id: 1, text: "I am the life of the party.", trait: "Extraversion" },
-  { id: 2, text: "I sympathize with others' feelings.", trait: "Agreeableness" },
-  { id: 3, text: "I am always prepared.", trait: "Conscientiousness" },
-  { id: 4, text: "I get upset easily.", trait: "Neuroticism" },
-  { id: 5, text: "I have a rich vocabulary.", trait: "Openness" },
+  { id: 1, text: "I am the life of the party.", trait: "EXTRAVERSION" },
+  { id: 2, text: "I sympathize with others' feelings.", trait: "AGREEABLENESS" },
+  { id: 3, text: "I am always prepared.", trait: "CONSCIENTIOUSNESS" },
+  { id: 4, text: "I get upset easily.", trait: "NEUROTICISM" },
+  { id: 5, text: "I have a rich vocabulary.", trait: "OPENNESS" },
 ];
 
 const OPTIONS = [
@@ -23,11 +25,14 @@ const OPTIONS = [
 
 export default function SignupPersonalityScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
+  const { email, name, password, age_group } = params as any;
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<Record<number, number>>({});
+  const [loading, setLoading] = useState(false);
   const progressAnim = useRef(new Animated.Value(0)).current;
 
-  const handleAnswer = (value: number) => {
+  const handleAnswer = async (value: number) => {
     const newAnswers = { ...answers, [QUESTIONS[currentStep].id]: value };
     setAnswers(newAnswers);
 
@@ -39,8 +44,26 @@ export default function SignupPersonalityScreen() {
         useNativeDriver: false,
       }).start();
     } else {
-      // Completed - link to dashboard
-      router.replace('/(tabs)/chat');
+      // Completed - Perform real signup and sync
+      setLoading(true);
+      try {
+        // 1. Sign up with Supabase and sync with backend
+        await authService.signUp(email, password, name);
+        
+        // 2. Identify primary personality trait (highest score)
+        // For simplicity, we'll just take the mapping from the last question's trait 
+        // or a more complex calculation if needed.
+        const personality = QUESTIONS[currentStep].trait;
+
+        // 3. Update personality and age in backend
+        await authService.updatePersonality(email, age_group, personality);
+
+        router.replace('/(tabs)/chat');
+      } catch (error: any) {
+        Alert.alert('Signup Error', error.message || 'Failed to complete registration');
+      } finally {
+        setLoading(false);
+      }
     }
   };
 

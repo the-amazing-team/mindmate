@@ -6,24 +6,28 @@ import { StyleSheet, Text, TouchableOpacity, View, TextInput, KeyboardAvoidingVi
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { authService } from '@/services/auth.service';
 
-export default function LoginScreen() {
+export default function SignupInfoScreen() {
   const router = useRouter();
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please enter email and password');
+  const handleNext = async () => {
+    if (!name || !email || !password) {
+      Alert.alert('Error', 'Please fill in all fields');
       return;
     }
 
     setLoading(true);
     try {
-      await authService.login(email, password);
-      router.replace('/(tabs)/chat');
+      // Just navigate to the next step, we'll sign up later
+      router.push({
+        pathname: '/(auth)/signup-age',
+        params: { email, name, password }
+      });
     } catch (error: any) {
-      Alert.alert('Login Failed', error.message || 'Invalid credentials');
+      Alert.alert('Signup Error', error.message || 'An error occurred during signup');
     } finally {
       setLoading(false);
     }
@@ -41,16 +45,27 @@ export default function LoginScreen() {
           </TouchableOpacity>
 
           <View style={styles.header}>
-            <Text style={styles.title}>Welcome Back</Text>
-            <Text style={styles.subtitle}>Sign in to continue your journey</Text>
+            <Text style={styles.title}>Create Account</Text>
+            <Text style={styles.subtitle}>Let's start with the basics</Text>
           </View>
 
           <View style={styles.form}>
             <View style={styles.inputContainer}>
+              <Text style={styles.label}>Full Name</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="John Doe"
+                placeholderTextColor={Colors.dark.textMuted}
+                value={name}
+                onChangeText={setName}
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
               <Text style={styles.label}>Email Address</Text>
               <TextInput
                 style={styles.input}
-                placeholder="hello@example.com"
+                placeholder="john@example.com"
                 placeholderTextColor={Colors.dark.textMuted}
                 value={email}
                 onChangeText={setEmail}
@@ -71,28 +86,24 @@ export default function LoginScreen() {
               />
             </View>
 
-            <TouchableOpacity style={styles.forgotPassword}>
-              <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-            </TouchableOpacity>
-
             <TouchableOpacity 
               style={[styles.submitButton, loading && { opacity: 0.7 }]}
-              onPress={handleLogin}
+              onPress={handleNext}
               disabled={loading}
             >
               <LinearGradient
                 colors={['#8B5CF6', '#6D28D9']}
                 style={styles.buttonGradient}
               >
-                <Text style={styles.submitButtonText}>{loading ? 'Logging in...' : 'Login'}</Text>
+                <Text style={styles.submitButtonText}>{loading ? 'Creating...' : 'Continue'}</Text>
               </LinearGradient>
             </TouchableOpacity>
           </View>
 
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Don't have an account? </Text>
-            <TouchableOpacity onPress={() => router.push('/(auth)/signup-info')}>
-              <Text style={styles.signUpLink}>Sign Up</Text>
+            <Text style={styles.footerText}>Already have an account? </Text>
+            <TouchableOpacity onPress={() => router.push('/(auth)/login')}>
+              <Text style={styles.signUpLink}>Login</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -160,19 +171,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.dark.border,
   },
-  forgotPassword: {
-    alignSelf: 'flex-end',
-    marginBottom: 32,
-  },
-  forgotPasswordText: {
-    color: Colors.primaryLight,
-    fontSize: 14,
-    fontWeight: '600',
-  },
   submitButton: {
     borderRadius: Radius.lg,
     overflow: 'hidden',
-    elevation: 4,
+    marginTop: 20,
   },
   buttonGradient: {
     paddingVertical: 16,

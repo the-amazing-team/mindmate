@@ -5,38 +5,40 @@ import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View, ScrollView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { authService } from '@/services/auth.service';
+import { supabase } from '@/services/supabase';
+import { useFocusEffect } from 'expo-router';
+
 const SETTINGS_GROUPS = [
   {
     title: 'Account',
     items: [
       { id: 'profile', label: 'Edit Profile', icon: '👤' },
-      { id: 'preferences', label: 'App Preferences', icon: '⚙️' },
-      { id: 'subscription', label: 'Subscription', icon: '💎', badge: 'Pro' },
-    ],
-  },
-  {
-    title: 'Wellness',
-    items: [
-      { id: 'daily-goal', label: 'Daily Goal', icon: '🎯' },
-      { id: 'reminders', label: 'Reminders', icon: '🔔' },
-    ],
-  },
-  {
-    title: 'Support',
-    items: [
-      { id: 'help', label: 'Help Center', icon: '❓' },
-      { id: 'privacy', label: 'Privacy Policy', icon: '🔒' },
-      { id: 'terms', label: 'Terms of Service', icon: '📄' },
+      { id: 'notifications', label: 'Notifications', icon: '🔔' },
     ],
   },
 ];
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const [user, setUser] = React.useState<any>(null);
 
-  const handleLogout = () => {
-    // In a real app, you'd clear auth tokens here
-    router.replace('/(auth)');
+  React.useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) {
+        // Fetch full profile from backend if needed
+        setUser(data.user);
+      }
+    });
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await authService.signOut();
+      router.replace('/(auth)');
+    } catch (error) {
+      console.error('Logout error', error);
+    }
   };
 
   return (
@@ -47,13 +49,13 @@ export default function ProfileScreen() {
             colors={['#8B5CF6', '#6D28D9']}
             style={styles.avatarGradient}
           >
-            <Text style={styles.avatarText}>JD</Text>
+            <Text style={styles.avatarText}>{user?.email?.substring(0, 2).toUpperCase() || 'JD'}</Text>
           </LinearGradient>
           <View style={styles.headerInfo}>
-            <Text style={styles.userName}>Jane Doe</Text>
-            <Text style={styles.userEmail}>jane.doe@example.com</Text>
+            <Text style={styles.userName}>{user?.user_metadata?.full_name || 'User'}</Text>
+            <Text style={styles.userEmail}>{user?.email || 'jane.doe@example.com'}</Text>
             <View style={styles.badge}>
-              <Text style={styles.badgeText}>MindMate Pro</Text>
+              <Text style={styles.badgeText}>MindMate Member</Text>
             </View>
           </View>
         </View>
@@ -93,11 +95,6 @@ export default function ProfileScreen() {
                     <Text style={styles.settingLabel}>{item.label}</Text>
                   </View>
                   <View style={styles.settingRight}>
-                    {item.badge && (
-                      <View style={styles.proBadge}>
-                        <Text style={styles.proBadgeText}>{item.badge}</Text>
-                      </View>
-                    )}
                     <Text style={styles.chevron}>›</Text>
                   </View>
                 </TouchableOpacity>

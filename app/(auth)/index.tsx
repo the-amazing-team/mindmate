@@ -34,7 +34,7 @@ export default function SplashScreen() {
       <View style={styles.footer}>
         <TouchableOpacity 
           style={styles.primaryButton}
-          onPress={() => router.push('/(auth)/signup-age')}
+          onPress={() => router.push('/(auth)/signup-info')}
         >
           <LinearGradient
             colors={['#8B5CF6', '#6D28D9']}
