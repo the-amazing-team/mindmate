@@ -72,6 +72,17 @@ export default function TabLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Profile',
+          tabBarIcon: ({ color, focused }) => (
+            <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
+              <Text style={[styles.iconText, { color: focused ? '#8B5CF6' : Colors.dark.textMuted }]}>👤</Text>
+            </View>
+          ),
+        }}
+      />
       {/* Hide the index tab as it will be redirected or unused */}
       <Tabs.Screen
         name="index"
