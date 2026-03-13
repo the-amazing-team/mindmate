@@ -2,19 +2,7 @@ import { HapticTab } from '@/components/haptic-tab';
 import { Colors } from '@/constants/theme';
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { Platform, StyleSheet, View } from 'react-native';
-
-function TabIcon({ emoji, label, focused }: { emoji: string; label: string; focused: boolean }) {
-  return (
-    <View style={[styles.tabIcon, focused && styles.tabIconFocused]}>
-      <View style={[styles.emojiWrap, focused && styles.emojiWrapFocused]}>
-        <View style={{ opacity: 1 }}>
-          {/* Using text for emoji icons to avoid SF Symbol deps */}
-        </View>
-      </View>
-    </View>
-  );
-}
+import { Platform, StyleSheet, View, Text } from 'react-native';
 
 export default function TabLayout() {
   return (
@@ -30,12 +18,12 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen
-        name="index"
+        name="insights"
         options={{
-          title: 'Home',
+          title: 'Insights',
           tabBarIcon: ({ color, focused }) => (
-            <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
-              <View style={[styles.iconDot, { backgroundColor: focused ? Colors.primary : 'transparent' }]} />
+            <View style={[styles.iconContainer, focused && styles.iconContainerActive, { borderColor: focused ? Colors.primary : 'transparent' }]}>
+              <Text style={[styles.iconText, { color: focused ? Colors.primary : Colors.dark.textMuted }]}>◈</Text>
             </View>
           ),
         }}
@@ -46,7 +34,7 @@ export default function TabLayout() {
           title: 'Journal',
           tabBarIcon: ({ color, focused }) => (
             <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
-              <View style={[styles.iconDot, { backgroundColor: focused ? Colors.primary : 'transparent' }]} />
+              <Text style={[styles.iconText, { color: focused ? '#8B5CF6' : Colors.dark.textMuted }]}>✦</Text>
             </View>
           ),
         }}
@@ -57,18 +45,18 @@ export default function TabLayout() {
           title: 'Chat',
           tabBarIcon: ({ color, focused }) => (
             <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
-              <View style={[styles.iconDot, { backgroundColor: focused ? Colors.primary : 'transparent' }]} />
+              <Text style={[styles.iconText, { color: focused ? '#06B6D4' : Colors.dark.textMuted }]}>◎</Text>
             </View>
           ),
         }}
       />
       <Tabs.Screen
-        name="insights"
+        name="panic"
         options={{
-          title: 'Insights',
+          title: 'Panic',
           tabBarIcon: ({ color, focused }) => (
-            <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
-              <View style={[styles.iconDot, { backgroundColor: focused ? Colors.primary : 'transparent' }]} />
+            <View style={[styles.iconContainer, styles.panicIconContainer, focused && styles.panicIconContainerActive]}>
+              <Text style={[styles.iconText, { color: focused ? '#EF4444' : '#EF444480' }]}>🆘</Text>
             </View>
           ),
         }}
@@ -79,20 +67,16 @@ export default function TabLayout() {
           title: 'Plugins',
           tabBarIcon: ({ color, focused }) => (
             <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
-              <View style={[styles.iconDot, { backgroundColor: focused ? Colors.primary : 'transparent' }]} />
+              <Text style={[styles.iconText, { color: focused ? '#10B981' : Colors.dark.textMuted }]}>⬡</Text>
             </View>
           ),
         }}
       />
+      {/* Hide the index tab as it will be redirected or unused */}
       <Tabs.Screen
-        name="panic"
+        name="index"
         options={{
-          title: 'Panic',
-          tabBarIcon: ({ color, focused }) => (
-            <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
-              <View style={[styles.iconDot, { backgroundColor: focused ? Colors.primary : 'transparent' }]} />
-            </View>
-          ),
+          href: null,
         }}
       />
     </Tabs>
@@ -109,40 +93,36 @@ const styles = StyleSheet.create({
     height: Platform.OS === 'ios' ? 85 : 64,
   },
   tabLabel: {
-    fontSize: 10,
-    fontWeight: '600',
-    marginTop: 2,
-  },
-  tabIcon: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: 32,
-    height: 32,
-  },
-  tabIconFocused: {},
-  emojiWrap: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emojiWrapFocused: {
-    backgroundColor: Colors.primary + '20',
+    fontSize: 9,
+    fontWeight: '700',
+    marginTop: 0,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   iconContainer: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
+    width: 38,
+    height: 38,
+    borderRadius: 13,
     alignItems: 'center',
     justifyContent: 'center',
+    marginTop: 4,
   },
   iconContainerActive: {
-    backgroundColor: Colors.primary + '20',
+    backgroundColor: 'rgba(139, 92, 246, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(139, 92, 246, 0.3)',
   },
-  iconDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+  panicIconContainer: {
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.3)',
+  },
+  panicIconContainerActive: {
+    backgroundColor: 'rgba(239, 68, 68, 0.2)',
+    borderColor: '#EF4444',
+  },
+  iconText: {
+    fontSize: 18,
+    fontWeight: '800',
   },
 });

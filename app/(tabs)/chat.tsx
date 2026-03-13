@@ -4,6 +4,7 @@ import {
   StyleSheet, Animated, KeyboardAvoidingView, Platform,
   Dimensions,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Spacing, Radius } from '@/constants/theme';
 
@@ -157,7 +158,7 @@ export default function ChatScreen() {
   }, [messages, isTyping]);
 
   return (
-    <View style={styles.root}>
+    <SafeAreaView style={styles.root} edges={['top']}>
       {/* Header */}
       <LinearGradient
         colors={['#10B981', '#06B6D4']}
@@ -269,7 +270,7 @@ export default function ChatScreen() {
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -277,7 +278,6 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.dark.bg },
 
   header: {
-    paddingTop: Platform.OS === 'ios' ? 56 : 48,
     paddingHorizontal: Spacing.md,
     paddingBottom: Spacing.md,
     borderBottomLeftRadius: Radius.xl,

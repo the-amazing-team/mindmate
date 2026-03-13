@@ -4,6 +4,7 @@ import {
   StyleSheet, Animated, TextInput, Dimensions, Platform,
   Modal,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Spacing, Radius } from '@/constants/theme';
 import { useRouter } from 'expo-router';
@@ -239,6 +240,16 @@ const sdkStyles = StyleSheet.create({
   apiIcon: { fontSize: 24, marginTop: 2 },
   apiTitle: { fontSize: 15, fontWeight: '700', color: Colors.dark.text, marginBottom: 4 },
   apiDesc: { fontSize: 13, color: Colors.dark.textSecondary, lineHeight: 20 },
+  sandboxDetail: {
+    backgroundColor: Colors.dark.card,
+    borderRadius: Radius.md,
+    padding: Spacing.md,
+    marginVertical: Spacing.sm,
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
+  },
+  sandboxTitle: { fontSize: 15, fontWeight: '700', color: Colors.dark.text, marginBottom: 8 },
+  sandboxText: { fontSize: 13, color: Colors.dark.textSecondary, lineHeight: 20 },
   codeBlock: {
     backgroundColor: '#0D1117',
     borderRadius: Radius.md,
@@ -499,7 +510,7 @@ export default function PluginsScreen() {
   if (activePage === 'sdk') return <SDKScreen onBack={() => setActivePage('marketplace')} />;
 
   return (
-    <View style={styles.root}>
+    <SafeAreaView style={styles.root} edges={['top']}>
       {/* Header */}
       <Animated.View style={{ opacity: headerAnim }}>
         <LinearGradient
@@ -663,7 +674,7 @@ export default function PluginsScreen() {
       )}
 
       <PluginDetail plugin={selectedPlugin} onClose={() => setSelectedPlugin(null)} />
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -671,7 +682,6 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.dark.bg },
 
   header: {
-    paddingTop: Platform.OS === 'ios' ? 56 : 48,
     paddingHorizontal: Spacing.md,
     paddingBottom: Spacing.md,
     borderBottomLeftRadius: Radius.xl,

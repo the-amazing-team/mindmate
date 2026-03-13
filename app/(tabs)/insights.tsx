@@ -3,6 +3,7 @@ import {
   View, Text, ScrollView, TouchableOpacity,
   StyleSheet, Animated, Dimensions, Platform,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Spacing, Radius } from '@/constants/theme';
 
@@ -116,7 +117,7 @@ export default function InsightsScreen() {
   const maxScore = Math.max(...WEEK_DATA.map(d => d.score));
 
   return (
-    <View style={styles.root}>
+    <SafeAreaView style={styles.root} edges={['top']}>
       {/* Header */}
       <LinearGradient
         colors={['#06B6D4', '#8B5CF6']}
@@ -238,7 +239,7 @@ export default function InsightsScreen() {
 
         <View style={{ height: 32 }} />
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -247,7 +248,6 @@ const styles = StyleSheet.create({
   scroll: { paddingBottom: 24 },
 
   header: {
-    paddingTop: Platform.OS === 'ios' ? 56 : 48,
     paddingHorizontal: Spacing.md,
     paddingBottom: Spacing.lg,
     borderBottomLeftRadius: Radius.xl,

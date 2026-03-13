@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Dimensions, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, ScrollView, Text, TouchableOpacity, View, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 
@@ -52,7 +53,6 @@ const Orb: React.FC<OrbProps> = ({ x, y, size, color, delay = 0 }) => (
     borderRadius: size / 2,
     backgroundColor: color + "28",
     transform: [{ translateX: -size / 2 }, { translateY: -size / 2 }],
-    // animation not supported in RN, skip
   }} />
 );
 
@@ -63,7 +63,6 @@ const GlassCard: React.FC<GlassCardProps> = ({ children, style = {}, onPress = u
     borderWidth: 1,
     borderColor: C.border,
     borderRadius: 20,
-    // animation not supported, skip
     ...style
   }}>
     {children}
@@ -72,13 +71,14 @@ const GlassCard: React.FC<GlassCardProps> = ({ children, style = {}, onPress = u
 
 type Phase = "idle"|"breathe"|"ground"|"affirm"|"done";
 type BreatheStep = "in"|"hold"|"out";
+
 export default function PanicScreen() {
   const [phase, setPhase] = useState<Phase>("idle");
   const [breatheStep, setBreatheStep] = useState<BreatheStep>("in");
   const [breatheCount, setBreatheCount] = useState<number>(0);
   const [groundStep, setGroundStep] = useState<number>(0);
   const [affirmIdx, setAffirmIdx] = useState<number>(0);
-  const timerRef = useRef<NodeJS.Timeout|null>(null);
+  const timerRef = useRef<any>(null);
 
   useEffect(() => {
     if (phase === "breathe") {
@@ -104,300 +104,267 @@ export default function PanicScreen() {
   const breatheColor = breatheStep === "in" ? C.cyan : breatheStep === "hold" ? C.neon : C.rose;
 
   if (phase === "idle") return (
-    <ScrollView style={{ flex: 1, padding: 20 }}>
-      <View style={{ alignItems: "center", marginBottom: 28 }}>
-        <View style={{
-          width: 68,
-          height: 68,
-          borderRadius: 24,
-          backgroundColor: C.rose + "18",
-          borderWidth: 1,
-          borderColor: C.rose + "44",
-          alignItems: "center",
-          justifyContent: "center",
-          marginBottom: 14
-        }}>
-          <Text style={{ fontSize: 28 }}>🆘</Text>
+    <SafeAreaView style={{ flex: 1, backgroundColor: C.void }} edges={['top']}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 24, paddingBottom: 100 }}>
+        <View style={{ alignItems: "center", marginBottom: 28 }}>
+          <View style={{
+            width: 68,
+            height: 68,
+            borderRadius: 24,
+            backgroundColor: C.rose + "18",
+            borderWidth: 1,
+            borderColor: C.rose + "44",
+            alignItems: "center",
+            justifyContent: "center",
+            marginBottom: 14
+          }}>
+            <Text style={{ fontSize: 28 }}>🆘</Text>
+          </View>
+          <Text style={{ fontSize: 22, fontWeight: "800", color: C.text, marginBottom: 6 }}>Panic Mode</Text>
+          <Text style={{ fontSize: 13, color: C.sub, lineHeight: 17, maxWidth: 260, textAlign: "center" }}>
+            You're safe. We'll guide you through a 3-step reset using breathing, grounding, and affirmations.
+          </Text>
         </View>
-        <Text style={{ fontSize: 22, fontWeight: "800", color: C.text, marginBottom: 6 }}>Panic Mode</Text>
-        <Text style={{ fontSize: 13, color: C.sub, lineHeight: 17, maxWidth: 260, textAlign: "center" }}>
-          You're safe. We'll guide you through a 3-step reset using breathing, grounding, and affirmations.
-        </Text>
-      </View>
 
-      <TouchableOpacity onPress={() => setPhase("breathe")} style={{
-        padding: 18,
-        borderRadius: 18,
-        backgroundColor: C.rose + "22",
-        borderWidth: 1.5,
-        borderColor: C.rose + "55",
-        alignItems: "center",
-        marginBottom: 14
-      }}>
-        <Text style={{ fontSize: 24, marginBottom: 6 }}>🌬️</Text>
-        <Text style={{ fontSize: 15, fontWeight: "800", color: C.rose, marginBottom: 4 }}>Start 4-7-8 Breathing</Text>
-        <Text style={{ fontSize: 12, color: C.sub }}>3 cycles · ~3 minutes · Activates calm response</Text>
-      </TouchableOpacity>
+        <TouchableOpacity onPress={() => setPhase("breathe")} style={{
+          padding: 24,
+          borderRadius: 24,
+          backgroundColor: C.rose + "22",
+          borderWidth: 1.5,
+          borderColor: C.rose + "55",
+          alignItems: "center",
+          marginBottom: 20
+        }}>
+          <Text style={{ fontSize: 32, marginBottom: 8 }}>🌬️</Text>
+          <Text style={{ fontSize: 18, fontWeight: "800", color: C.rose, marginBottom: 4 }}>Start 4-7-8 Breathing</Text>
+          <Text style={{ fontSize: 13, color: C.sub }}>3 cycles · ~3 minutes</Text>
+        </TouchableOpacity>
 
-      <View style={{ flexDirection: "column", gap: 8 }}>
-        {[
-          { icon: "🧘", title: "5-4-3-2-1 Grounding", sub: "Anchor to the present moment", color: C.cyan },
-          { icon: "💬", title: "Crisis Line", sub: "Talk to a real human · 24/7 free", color: C.amber },
-          { icon: "🤖", title: "Chat with MindMate AI", sub: "I'm here. Tell me what's happening.", color: C.neon },
-        ].map((a, i) => (
-          <GlassCard key={i} delay={0.2 + i * 0.07} style={{ padding: 13, flexDirection: "row", alignItems: "center", gap: 12 }}
-            onPress={() => a.title.includes("Grounding") && setPhase("ground")}>
-            <View style={{
-              width: 38,
-              height: 38,
-              borderRadius: 12,
-              backgroundColor: a.color + "18",
-              borderWidth: 1,
-              borderColor: a.color + "33",
-              alignItems: "center",
-              justifyContent: "center"
-            }}>
-              <Text style={{ fontSize: 16 }}>{a.icon}</Text>
-            </View>
-            <View>
-              <Text style={{ fontSize: 13, fontWeight: "700", color: a.color }}>{a.title}</Text>
-              <Text style={{ fontSize: 11, color: C.sub, marginTop: 2 }}>{a.sub}</Text>
-            </View>
-            <Text style={{ marginLeft: "auto", color: C.muted, fontSize: 14 }}>›</Text>
-          </GlassCard>
-        ))}
-      </View>
-    </ScrollView>
+        <View style={{ gap: 12 }}>
+          {[
+            { icon: "🧘", title: "5-4-3-2-1 Grounding", sub: "Anchor to the present moment", color: C.cyan },
+            { icon: "💬", title: "Crisis Line", sub: "Talk to a real human · 24/7 free", color: C.amber },
+            { icon: "🤖", title: "Chat with MindMate AI", sub: "I'm here. Tell me what's happening.", color: C.neon },
+          ].map((a, i) => (
+            <GlassCard key={i} style={{ padding: 16, flexDirection: "row", alignItems: "center", gap: 16 }}
+              onPress={() => a.title.includes("Grounding") && setPhase("ground")}>
+              <View style={{
+                width: 44,
+                height: 44,
+                borderRadius: 14,
+                backgroundColor: a.color + "18",
+                borderWidth: 1,
+                borderColor: a.color + "33",
+                alignItems: "center",
+                justifyContent: "center"
+              }}>
+                <Text style={{ fontSize: 20 }}>{a.icon}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 15, fontWeight: "700", color: a.color }}>{a.title}</Text>
+                <Text style={{ fontSize: 12, color: C.sub, marginTop: 2 }}>{a.sub}</Text>
+              </View>
+              <Text style={{ color: C.muted, fontSize: 18 }}>›</Text>
+            </GlassCard>
+          ))}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 
   if (phase === "breathe") return (
-    <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 24, position: "relative", overflow: "hidden" }}>
-      <Orb x={50} y={30} size={300} color={breatheColor} delay={0} />
-      <View style={{ position: "relative", zIndex: 2, alignItems: "center", gap: 20 }}>
-        <Text style={{ fontSize: 10, color: C.muted, fontWeight: "700", letterSpacing: 0.14, textTransform: "uppercase" }}>
-          Cycle {breatheCount + 1} of 3
-        </Text>
-        <View style={{ position: "relative", width: 160, height: 160, alignItems: "center", justifyContent: "center" }}>
-          {[1, 1.4, 1.8].map((s, i) => (
-            <View key={i} style={{
-              position: "absolute",
-              width: 160,
-              height: 160,
-              borderRadius: 80,
-              borderWidth: 1,
-              borderColor: breatheColor + (20 - i * 5).toString(16),
-              transform: [{ scale: breatheScale * s }],
-            }} />
-          ))}
-          <View style={{
-            width: 96,
-            height: 96,
-            borderRadius: 48,
-            backgroundColor: breatheColor + "44",
-            borderWidth: 2,
-            borderColor: breatheColor + "66",
-            transform: [{ scale: breatheScale }],
-            alignItems: "center",
-            justifyContent: "center"
-          }}>
-            <Text style={{ fontSize: 28 }}>
-              {breatheStep === "in" ? "☁️" : breatheStep === "hold" ? "✨" : "🌊"}
+    <SafeAreaView style={{ flex: 1, backgroundColor: C.void }} edges={['top']}>
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 24 }}>
+        <Orb x={50} y={30} size={300} color={breatheColor} />
+        <View style={{ alignItems: "center", gap: 24 }}>
+          <Text style={{ fontSize: 12, color: C.muted, fontWeight: "700", letterSpacing: 1 }}>
+            CYCLE {breatheCount + 1} OF 3
+          </Text>
+          <View style={{ width: 200, height: 200, alignItems: "center", justifyContent: "center" }}>
+            <View style={{
+              width: 120,
+              height: 120,
+              borderRadius: 60,
+              backgroundColor: breatheColor + "33",
+              borderWidth: 2,
+              borderColor: breatheColor + "55",
+              transform: [{ scale: breatheScale }],
+              alignItems: "center",
+              justifyContent: "center"
+            }}>
+              <Text style={{ color: C.text, fontSize: 18, fontWeight: "800" }}>{breatheStep.toUpperCase()}</Text>
+            </View>
+          </View>
+          <View style={{ alignItems: "center" }}>
+            <Text style={{ fontSize: 28, fontWeight: "900", color: breatheColor }}>{breatheLabel}</Text>
+            <Text style={{ fontSize: 14, color: C.sub, marginTop: 8, textAlign: "center" }}>
+              {breatheStep === "in" ? "Inhale slowly through your nose" :
+               breatheStep === "hold" ? "Hold gently, stay still" :
+               "Exhale fully through your mouth"}
             </Text>
           </View>
+          <TouchableOpacity onPress={() => { setPhase("idle"); setBreatheCount(0); }} style={{
+            marginTop: 40,
+            paddingHorizontal: 24,
+            paddingVertical: 12,
+            borderRadius: 14,
+            borderWidth: 1,
+            borderColor: C.border
+          }}>
+            <Text style={{ color: C.muted, fontSize: 14 }}>Cancel Session</Text>
+          </TouchableOpacity>
         </View>
-        <View style={{ alignItems: "center" }}>
-          <Text style={{ fontSize: 22, fontWeight: "800", color: breatheColor, letterSpacing: -0.02 }}>
-            {breatheLabel}
-          </Text>
-          <Text style={{ fontSize: 13, color: C.sub, marginTop: 5 }}>
-            {breatheStep === "in" ? "Inhale slowly through your nose (4s)" :
-             breatheStep === "hold" ? "Hold gently, stay still (7s)" :
-             "Exhale fully through your mouth (8s)"}
-          </Text>
-        </View>
-        <View style={{ flexDirection: "row", gap: 6 }}>
-          {[0, 1, 2].map(i => (
-            <View key={i} style={{
-              width: 8,
-              height: 8,
-              borderRadius: 4,
-              backgroundColor: i < breatheCount ? breatheColor : breatheColor + "30",
-            }} />
-          ))}
-        </View>
-        <TouchableOpacity onPress={() => { setPhase("idle"); setBreatheCount(0); }} style={{
-          backgroundColor: "transparent",
-          borderWidth: 1,
-          borderColor: C.border,
-          borderRadius: 10,
-          paddingHorizontal: 18,
-          paddingVertical: 8
-        }}>
-          <Text style={{ color: C.muted, fontSize: 12 }}>End session</Text>
-        </TouchableOpacity>
       </View>
-    </View>
+    </SafeAreaView>
   );
 
   if (phase === "ground") return (
-    <ScrollView style={{ flex: 1, padding: 20 }}>
-      <View style={{ alignItems: "center" }}>
-        <View style={{
-          width: 56,
-          height: 56,
-          borderRadius: 20,
-          backgroundColor: C.cyan + "18",
-          borderWidth: 1,
-          borderColor: C.cyan + "33",
-          alignItems: "center",
-          justifyContent: "center",
-          marginBottom: 12
-        }}>
-          <Text style={{ fontSize: 22 }}>🧘</Text>
-        </View>
-        <Text style={{ fontSize: 20, fontWeight: "800", color: C.text, marginBottom: 4 }}>5-4-3-2-1 Grounding</Text>
-        <Text style={{ fontSize: 12, color: C.sub, lineHeight: 16 }}>
-          Anchor yourself to the present moment
-        </Text>
-      </View>
-      <View style={{ flexDirection: "row", gap: 6, justifyContent: "center", marginTop: 16 }}>
-        {GROUND.map((g, i) => (
-          <View key={i} style={{
-            width: 42,
-            height: 42,
-            borderRadius: 12,
-            backgroundColor: i === groundStep ? C.cyan + "22" : i < groundStep ? C.lime + "18" : C.lift + "55",
+    <SafeAreaView style={{ flex: 1, backgroundColor: C.void }} edges={['top']}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 24, paddingBottom: 100 }}>
+        <View style={{ alignItems: "center" }}>
+          <View style={{
+            width: 64,
+            height: 64,
+            borderRadius: 22,
+            backgroundColor: C.cyan + "18",
             borderWidth: 1,
-            borderColor: i === groundStep ? C.cyan : i < groundStep ? C.lime : C.border,
+            borderColor: C.cyan + "33",
             alignItems: "center",
-            justifyContent: "center"
+            justifyContent: "center",
+            marginBottom: 16
           }}>
-            <Text style={{
-              fontSize: 16,
-              fontWeight: "700",
-              color: i === groundStep ? C.cyan : i < groundStep ? C.lime : C.muted
-            }}>
-              {i < groundStep ? "✓" : g.n}
-            </Text>
+            <Text style={{ fontSize: 28 }}>🧘</Text>
           </View>
-        ))}
-      </View>
-      <GlassCard style={{
-        padding: 20,
-        alignItems: "center",
-        backgroundColor: C.cyan + "12",
-        borderWidth: 1,
-        borderColor: C.cyan + "22",
-        marginTop: 16
-      }}>
-        <Text style={{ fontSize: 32, marginBottom: 8 }}>
-          {groundStep === 0 ? "👀" : groundStep === 1 ? "🤚" : groundStep === 2 ? "👂" : groundStep === 3 ? "👃" : "👅"}
-        </Text>
-        <Text style={{ fontSize: 11, color: C.cyan, fontWeight: "700", letterSpacing: 0.1, textTransform: "uppercase", marginBottom: 8 }}>
-          {GROUND[groundStep]?.sense}
-        </Text>
-        <Text style={{ fontSize: 15, color: C.text, fontWeight: "600", lineHeight: 22.5 }}>
-          {GROUND[groundStep]?.q}
-        </Text>
-      </GlassCard>
-      <View style={{ flexDirection: "row", gap: 10, marginTop: 16 }}>
-        <TouchableOpacity onPress={() => { if (groundStep > 0) setGroundStep(s => s - 1); }} style={{
-          flex: 1,
-          padding: 12,
-          borderRadius: 13,
-          backgroundColor: C.lift + "88",
+          <Text style={{ fontSize: 22, fontWeight: "800", color: C.text, marginBottom: 8 }}>Grounding Exercise</Text>
+          <Text style={{ fontSize: 14, color: C.sub, textAlign: "center" }}>Anchor yourself to the here and now</Text>
+        </View>
+
+        <View style={{ flexDirection: "row", gap: 8, justifyContent: "center", marginVertical: 32 }}>
+          {GROUND.map((g, i) => (
+            <View key={i} style={{
+              width: 48,
+              height: 48,
+              borderRadius: 14,
+              backgroundColor: i === groundStep ? C.cyan + "22" : i < groundStep ? C.lime + "18" : C.lift,
+              borderWidth: 1,
+              borderColor: i === groundStep ? C.cyan : i < groundStep ? C.lime : C.border,
+              alignItems: "center",
+              justifyContent: "center"
+            }}>
+              <Text style={{
+                fontSize: 18,
+                fontWeight: "700",
+                color: i === groundStep ? C.cyan : i < groundStep ? C.lime : C.muted
+              }}>
+                {i < groundStep ? "✓" : g.n}
+              </Text>
+            </View>
+          ))}
+        </View>
+
+        <GlassCard style={{
+          padding: 24,
+          alignItems: "center",
+          backgroundColor: C.cyan + "12",
           borderWidth: 1,
-          borderColor: C.border,
-          alignItems: "center"
+          borderColor: C.cyan + "22"
         }}>
-          <Text style={{ color: C.sub, fontSize: 12 }}>← Back</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => {
-          if (groundStep < GROUND.length - 1) setGroundStep(s => s + 1);
-          else setPhase("affirm");
-        }} style={{
-          flex: 2,
-          padding: 12,
-          borderRadius: 13,
-          backgroundColor: C.a2 + "CC",
-          borderWidth: 1,
-          borderColor: C.cyan + "44",
-          alignItems: "center"
-        }}>
-          <Text style={{ color: C.text, fontSize: 13, fontWeight: "700" }}>
-            {groundStep < GROUND.length - 1 ? "I named them →" : "Done! Continue →"}
+          <Text style={{ fontSize: 40, marginBottom: 12 }}>
+            {groundStep === 0 ? "👀" : groundStep === 1 ? "🤚" : groundStep === 2 ? "👂" : groundStep === 3 ? "👃" : "👅"}
           </Text>
-        </TouchableOpacity>
-      </View>
-      <TouchableOpacity onPress={() => setPhase("idle")} style={{ alignItems: "center", paddingVertical: 4, marginTop: 8 }}>
-        <Text style={{ color: C.muted, fontSize: 12 }}>← Back to Panic Mode</Text>
-      </TouchableOpacity>
-    </ScrollView>
+          <Text style={{ fontSize: 12, color: C.cyan, fontWeight: "800", letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>
+            {GROUND[groundStep]?.sense}
+          </Text>
+          <Text style={{ fontSize: 18, color: C.text, fontWeight: "600", textAlign: "center", lineHeight: 26 }}>
+            {GROUND[groundStep]?.q}
+          </Text>
+        </GlassCard>
+
+        <View style={{ flexDirection: "row", gap: 12, marginTop: 32 }}>
+          <TouchableOpacity onPress={() => { if (groundStep > 0) setGroundStep(s => s - 1); }} style={{
+            flex: 1,
+            padding: 16,
+            borderRadius: 16,
+            backgroundColor: C.lift,
+            borderWidth: 1,
+            borderColor: C.border,
+            alignItems: "center"
+          }}>
+            <Text style={{ color: C.sub, fontSize: 14, fontWeight: "600" }}>Back</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => {
+            if (groundStep < GROUND.length - 1) setGroundStep(s => s + 1);
+            else setPhase("affirm");
+          }} style={{
+            flex: 2,
+            padding: 16,
+            borderRadius: 16,
+            backgroundColor: C.a2,
+            alignItems: "center"
+          }}>
+            <Text style={{ color: C.text, fontSize: 14, fontWeight: "700" }}>
+              {groundStep < GROUND.length - 1 ? "Next →" : "Finish →"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 
   if (phase === "affirm") return (
-    <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 24, gap: 20 }}>
-      <Orb x={50} y={40} size={280} color={C.neon} delay={0} />
-      <View style={{ position: "relative", zIndex: 2, width: "100%", alignItems: "center", gap: 18 }}>
-        <Text style={{ fontSize: 36 }}>💜</Text>
-        <Text style={{ fontSize: 10, color: C.muted, fontWeight: "700", letterSpacing: 0.14, textTransform: "uppercase" }}>
-          {affirmIdx + 1} of {AFFIRMATIONS.length}
-        </Text>
-        <GlassCard style={{
-          padding: 20,
-          alignItems: "center",
-          borderWidth: 1,
-          borderColor: C.neon + "25",
-          backgroundColor: C.a1 + "12"
-        }}>
-          <Text style={{
-            fontSize: 17,
-            color: C.text,
-            lineHeight: 25.5,
-            fontWeight: "600",
-            letterSpacing: -0.01,
-            textAlign: "center"
+    <SafeAreaView style={{ flex: 1, backgroundColor: C.void }} edges={['top']}>
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 24 }}>
+        <Orb x={50} y={40} size={300} color={C.neon} />
+        <View style={{ width: "100%", alignItems: "center", gap: 32 }}>
+          <Text style={{ fontSize: 48 }}>💜</Text>
+          <GlassCard style={{
+            padding: 24,
+            width: "100%",
+            alignItems: "center",
+            backgroundColor: C.a1 + "12",
+            borderWidth: 1,
+            borderColor: C.neon + "22"
           }}>
-            "{AFFIRMATIONS[affirmIdx]}"
-          </Text>
-        </GlassCard>
-        <View style={{ flexDirection: "row", gap: 8 }}>
-          {AFFIRMATIONS.map((_, i) => (
-            <View key={i} style={{
-              width: i === affirmIdx ? 18 : 7,
-              height: 7,
-              borderRadius: 4,
-              backgroundColor: i === affirmIdx ? C.neon : C.neon + "30",
-            }} />
-          ))}
+            <Text style={{
+              fontSize: 20,
+              color: C.text,
+              textAlign: "center",
+              lineHeight: 30,
+              fontWeight: "600"
+            }}>
+              "{AFFIRMATIONS[affirmIdx]}"
+            </Text>
+          </GlassCard>
+          <View style={{ flexDirection: "row", gap: 10 }}>
+            {AFFIRMATIONS.map((_, i) => (
+              <View key={i} style={{
+                width: i === affirmIdx ? 24 : 8,
+                height: 8,
+                borderRadius: 4,
+                backgroundColor: i === affirmIdx ? C.neon : C.neon + "22",
+              }} />
+            ))}
+          </View>
+          <TouchableOpacity
+            onPress={() => {
+              if (affirmIdx < AFFIRMATIONS.length - 1) setAffirmIdx(i => i + 1);
+              else setPhase("idle");
+            }}
+            style={{
+              width: "100%",
+              padding: 18,
+              borderRadius: 18,
+              backgroundColor: affirmIdx === AFFIRMATIONS.length - 1 ? C.cyan : C.a1,
+              alignItems: "center"
+            }}
+          >
+            <Text style={{ color: affirmIdx === AFFIRMATIONS.length - 1 ? C.deep : C.text, fontSize: 16, fontWeight: "800" }}>
+              {affirmIdx < AFFIRMATIONS.length - 1 ? "Next Affirmation" : "I Feel Better Now"}
+            </Text>
+          </TouchableOpacity>
         </View>
-        {affirmIdx < AFFIRMATIONS.length - 1 ? (
-          <TouchableOpacity onPress={() => setAffirmIdx(i => i + 1)} style={{
-            paddingHorizontal: 28,
-            paddingVertical: 13,
-            borderRadius: 14,
-            backgroundColor: C.a1,
-            borderWidth: 1,
-            borderColor: C.neon + "44",
-            alignItems: "center"
-          }}>
-            <Text style={{ color: C.text, fontSize: 13, fontWeight: "700" }}>Next affirmation →</Text>
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity onPress={() => setPhase("idle")} style={{
-            paddingHorizontal: 28,
-            paddingVertical: 13,
-            borderRadius: 14,
-            backgroundColor: C.cyan + "AA",
-            borderWidth: 1,
-            borderColor: C.cyan + "44",
-            alignItems: "center"
-          }}>
-            <Text style={{ color: C.deep, fontSize: 13, fontWeight: "700" }}>✓ I feel better now</Text>
-          </TouchableOpacity>
-        )}
       </View>
-    </View>
+    </SafeAreaView>
   );
 
   return null;

@@ -1,5 +1,5 @@
-import MindMateFrontend from '../mindmate';
+import { Redirect } from 'expo-router';
 
-export default function TabOneScreen() {
-  return <MindMateFrontend />;
+export default function TabIndex() {
+  return <Redirect href="/insights" />;
 }
