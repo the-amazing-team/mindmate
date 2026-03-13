@@ -1,41 +1,52 @@
-/**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
- */
-
 import { Platform } from 'react-native';
 
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
-
 export const Colors = {
+  primary: '#8B5CF6',       // violet-500
+  primaryLight: '#A78BFA',  // violet-400
+  primaryDark: '#6D28D9',   // violet-700
+  secondary: '#06B6D4',     // cyan-500
+  accent: '#F59E0B',        // amber-500
+  danger: '#EF4444',        // red-500
+  success: '#10B981',       // emerald-500
+  warning: '#F97316',       // orange-500
+
+  dark: {
+    bg: '#0D0D14',
+    surface: '#13131F',
+    card: '#1A1A2E',
+    border: '#2A2A45',
+    muted: '#3B3B5C',
+    text: '#F0EEFF',
+    textSecondary: '#9B9BC0',
+    textMuted: '#5C5C8A',
+  },
+
+  gradient: {
+    primary: ['#8B5CF6', '#6D28D9'] as const,
+    secondary: ['#06B6D4', '#0891B2'] as const,
+    danger: ['#EF4444', '#DC2626'] as const,
+    card: ['#1A1A2E', '#13131F'] as const,
+    journal: ['#8B5CF6', '#EC4899'] as const,
+    insights: ['#06B6D4', '#8B5CF6'] as const,
+    panic: ['#EF4444', '#F97316'] as const,
+    plugins: ['#10B981', '#06B6D4'] as const,
+  },
+
   light: {
     text: '#11181C',
     background: '#fff',
-    tint: tintColorLight,
+    tint: '#8B5CF6',
     icon: '#687076',
     tabIconDefault: '#687076',
-    tabIconSelected: tintColorLight,
-  },
-  dark: {
-    text: '#ECEDEE',
-    background: '#151718',
-    tint: tintColorDark,
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
-    tabIconSelected: tintColorDark,
+    tabIconSelected: '#8B5CF6',
   },
 };
 
 export const Fonts = Platform.select({
   ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
     sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
     serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
     rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
     mono: 'ui-monospace',
   },
   default: {
@@ -45,9 +56,41 @@ export const Fonts = Platform.select({
     mono: 'monospace',
   },
   web: {
-    sans: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+    sans: "Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
     serif: "Georgia, 'Times New Roman', serif",
-    rounded: "'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif",
-    mono: "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
+    rounded: "'SF Pro Rounded', sans-serif",
+    mono: "SFMono-Regular, Menlo, Monaco, Consolas, monospace",
   },
 });
+
+export const Spacing = {
+  xs: 4,
+  sm: 8,
+  md: 16,
+  lg: 24,
+  xl: 32,
+  xxl: 48,
+};
+
+export const MindMateColors = {
+  void: "#04060F",
+  deep: "#080C1A",
+  surface: "#0C1020",
+  lift: "#111827",
+  card: "#141C30",
+  border: "rgba(148,163,184,0.08)",
+  neon: "#A78BFA",
+  cyan: "#34D399",
+  rose: "#F87171",
+  amber: "#FBBF24",
+  lime: "#86EFAC",
+  pink: "#F472B6",
+  blue: "#60A5FA",
+  text: "#F8FAFF",
+  sub: "#94A3B8",
+  muted: "#3D4F6A",
+  a1: "#6D28D9",
+  a2: "#0F766E",
+  a3: "#9F1239",
+  a4: "#1D4ED8",
+};
