@@ -10,9 +10,9 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "server": "pnpm --prefix api start:dev",
-    "db:generate": "prisma --prefix api generate",
-    "db:migrate": "prisma --prefix api migrate dev",
-    "db:reset": "prisma --prefix api reset"
+    "db:migrate": "pnpm --prefix api run prisma:migrate",
+    "db:generate": "pnpm --prefix api run prisma:generate",
+    "db:reset": "pnpm --prefix api run prisma:reset"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",

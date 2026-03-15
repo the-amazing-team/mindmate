@@ -1,14 +1,12 @@
 import { Btn, OBWrap } from "@/components/auth";
 import { MindMateColors as C, MOOD_DATA } from "@/constants/theme";
 import { useState } from "react";
+import { authService } from "@/services/auth.service";
+import { supabase } from "@/lib/supabase";
+import { useRouter } from "expo-router";
 
-export default function OnboardingScreen({
-  onComplete,
-  onSignOut,
-}: {
-  onComplete: () => void;
-  onSignOut: () => void;
-}) {
+export default function OnboardingScreen() {
+  const router = useRouter();
   const [step, setStep] = useState(1);
   const [data, setData] = useState({
     age_range: "",
@@ -17,6 +15,8 @@ export default function OnboardingScreen({
     reminders: "daily",
   });
 
+  const [loading, setLoading] = useState(false);
+
   const next = () => setStep((s) => s + 1);
   const back = () => setStep((s) => s - 1);
 
@@ -24,11 +24,29 @@ export default function OnboardingScreen({
     text?: string;
     mood?: number | null;
   }) => {
-    onComplete();
+    setLoading(true);
+    try {
+      const email = authService.getEmail();
+      if (email) {
+        await authService.completeOnboarding(email, {
+          ageGroup: data.age_range,
+          personality: data.personality,
+          goals: data.goals,
+          reminders: data.reminders,
+        });
+      }
+      router.replace('/(tabs)');
+    } catch (error) {
+      console.error('Onboarding finish error:', error);
+      router.replace('/(tabs)');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSignOut = async () => {
-    onSignOut();
+    await authService.signOut();
+    router.replace('/(auth)');
   };
 
   switch (step) {

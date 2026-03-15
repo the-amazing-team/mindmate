@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { MindMateColors as C } from '@/constants/theme'
 
-export const Input = ({ label, type = "text", value, onChange, placeholder, error, icon, show, onToggleShow, autoComplete, required }: { label?: string, type?: string, value: string, onChange: (e: any) => void, placeholder?: string, error?: string, icon?: string, show?: boolean, onToggleShow?: () => void, autoComplete?: string, required?: boolean }) => {
+export const Input = ({ label, type = "text", value, onChange, placeholder, error, icon, show, onToggleShow, autoComplete, required, style }: { label?: string, type?: string, value: string, onChange: (e: any) => void, placeholder?: string, error?: string, icon?: string, show?: boolean, onToggleShow?: () => void, autoComplete?: string, required?: boolean, style?: any }) => {
   const [focused, setFocused] = useState(false);
   const isPass = type === "password";
   return (
@@ -16,7 +16,8 @@ export const Input = ({ label, type = "text", value, onChange, placeholder, erro
             width: "100%", padding: `12px ${isPass ? "42px" : "13px"} 12px ${icon ? "40px" : "13px"}`, borderRadius: 13,
             background: focused ? `${C.lift}CC` : `${C.lift}88`,
             border: `1.5px solid ${error ? C.rose + "88" : focused ? C.neon + "66" : "rgba(255,255,255,.08)"}`,
-            color: C.text, fontSize: 14, outline: "none", transition: "all .2s", boxSizing: "border-box"
+            color: C.text, fontSize: 14, outline: "none", transition: "all .2s", boxSizing: "border-box",
+            ...style
           }} />
         {isPass && <button type="button" onClick={onToggleShow} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: C.sub, fontSize: 15, padding: 0 }}>{show ? "🙈" : "👁"}</button>}
       </div>
