@@ -1,4 +1,6 @@
-import { BackBtn, ProgressDots, Screen } from "@/components/auth";
+import { BackBtn } from "./back-btn";
+import { ProgressDots } from "./progress-dots";
+import { Screen } from "./screen";
 import { MindMateColors as C } from "@/constants/theme";
 import { ReactNode } from "react";
 

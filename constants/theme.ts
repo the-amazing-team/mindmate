@@ -109,6 +109,8 @@ export const MindMateColors = {
   a4: "#1D4ED8",
 };
 
+export const C = MindMateColors;
+
 export const MOOD_DATA = [
   { e: "😞", l: "Low", c: MindMateColors.rose },
   { e: "😔", l: "Meh", c: "#F97316" },
