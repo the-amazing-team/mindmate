@@ -8,7 +8,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "server": "npm --prefix api start:dev",
+    "server": "npm --prefix api run start:dev",
     "db:migrate": "npm --prefix api run prisma:migrate",
     "db:generate": "npm --prefix api run prisma:generate",
     "db:reset": "npm --prefix api run prisma:reset"

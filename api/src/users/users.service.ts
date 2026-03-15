@@ -9,7 +9,7 @@ export class UsersService {
 
   async create(data: {
     email: string;
-    name: string;
+    name?: string;
     password?: string;
     auth_type?: any;
     age_group?: string;

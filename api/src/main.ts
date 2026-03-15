@@ -12,7 +12,11 @@ async function bootstrap() {
     .setTitle('MindMate API')
     .setDescription('The MindMate NestJS API description')
     .setVersion('1.0')
-    .addTag('mindmate')
+    .addTag('Users', 'User management and authentication')
+    .addTag('AI', 'AI pipeline and processing')
+    .addTag('Voice', 'Text-to-speech and speech-to-text')
+    .addTag('Plugins', 'Plugin management and installation')
+    .addTag('System', 'System health and utility endpoints')
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);

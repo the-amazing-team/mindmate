@@ -5,13 +5,18 @@ import { diskStorage } from 'multer';
 import * as path from 'path';
 import * as fs from 'fs';
 import { Request } from 'express';
+import { ApiTags, ApiOperation, ApiResponse, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import { TextToSpeechDto, SpeechToTextDto } from './dto/voice.dto';
 
+@ApiTags('Voice')
 @Controller('voice')
 export class VoiceController {
   constructor(private readonly voiceService: VoiceService) {}
 
   @Post('tts')
-  async textToSpeech(@Body() data: { text: string, voice?: string }) {
+  @ApiOperation({ summary: 'Convert text to speech' })
+  @ApiResponse({ status: 200, description: 'Audio URL returned successfully' })
+  async textToSpeech(@Body() data: TextToSpeechDto) {
     if (!data.text) {
       return { success: false, message: 'Text field is required' };
     }
@@ -28,6 +33,10 @@ export class VoiceController {
   }
 
   @Post('stt')
+  @ApiOperation({ summary: 'Convert speech to text' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({ type: SpeechToTextDto })
+  @ApiResponse({ status: 200, description: 'Transcription returned successfully' })
   @UseInterceptors(FileInterceptor('audio', {
     storage: diskStorage({
       destination: (req: Request, file: Express.Multer.File, cb) => {
