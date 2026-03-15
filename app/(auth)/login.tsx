@@ -2,13 +2,41 @@ import { Colors, Radius, Spacing } from '@/constants/theme';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, TextInput, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View, TextInput, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useAuth } from '@/hooks/use-auth';
 
 export default function LoginScreen() {
   const router = useRouter();
+  const { signIn } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleLogin = async () => {
+    if (!email.trim() || !password) {
+      setError('Please enter both email and password.');
+      return;
+    }
+    setLoading(true);
+    setError('');
+    
+    const { error: err } = await signIn(email.trim(), password);
+    setLoading(false);
+    
+    if (err) {
+      if (err.message.toLowerCase().includes('confirm') || err.message.toLowerCase().includes('verify')) {
+        setError('Please verify your email address before signing in. Check your inbox for a confirmation link.');
+      } else if (err.message.toLowerCase().includes('invalid login credentials')) {
+        setError('Invalid email or password. Please try again.');
+      } else {
+        setError(err.message);
+      }
+    } else {
+      router.replace('/(tabs)/chat');
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -16,7 +44,7 @@ export default function LoginScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
       >
-        <ScrollView contentContainerStyle={styles.scrollContent}>
+        <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
             <Text style={styles.backButtonText}>←</Text>
           </TouchableOpacity>
@@ -27,6 +55,12 @@ export default function LoginScreen() {
           </View>
 
           <View style={styles.form}>
+            {error ? (
+              <View style={styles.errorBox}>
+                <Text style={styles.errorText}>{error}</Text>
+              </View>
+            ) : null}
+
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Email Address</Text>
               <TextInput
@@ -34,9 +68,13 @@ export default function LoginScreen() {
                 placeholder="hello@example.com"
                 placeholderTextColor={Colors.dark.textMuted}
                 value={email}
-                onChangeText={setEmail}
+                onChangeText={(text) => {
+                  setEmail(text);
+                  if (error) setError('');
+                }}
                 keyboardType="email-address"
                 autoCapitalize="none"
+                autoComplete="email"
               />
             </View>
 
@@ -47,8 +85,12 @@ export default function LoginScreen() {
                 placeholder="••••••••"
                 placeholderTextColor={Colors.dark.textMuted}
                 value={password}
-                onChangeText={setPassword}
+                onChangeText={(text) => {
+                  setPassword(text);
+                  if (error) setError('');
+                }}
                 secureTextEntry
+                autoComplete="password"
               />
             </View>
 
@@ -57,14 +99,19 @@ export default function LoginScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity 
-              style={styles.submitButton}
-              onPress={() => router.replace('/(tabs)/chat')}
+              style={[styles.submitButton, loading && styles.disabledButton]}
+              onPress={handleLogin}
+              disabled={loading}
             >
               <LinearGradient
                 colors={['#8B5CF6', '#6D28D9']}
                 style={styles.buttonGradient}
               >
-                <Text style={styles.submitButtonText}>Login</Text>
+                {loading ? (
+                  <ActivityIndicator color="#FFF" size="small" />
+                ) : (
+                  <Text style={styles.submitButtonText}>Login</Text>
+                )}
               </LinearGradient>
             </TouchableOpacity>
           </View>
@@ -120,6 +167,18 @@ const styles = StyleSheet.create({
   form: {
     flex: 1,
   },
+  errorBox: {
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.3)',
+    borderRadius: Radius.md,
+    padding: 12,
+    marginBottom: 20,
+  },
+  errorText: {
+    color: '#EF4444',
+    fontSize: 13,
+  },
   inputContainer: {
     marginBottom: 24,
   },
@@ -154,9 +213,14 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     elevation: 4,
   },
+  disabledButton: {
+    opacity: 0.7,
+  },
   buttonGradient: {
     paddingVertical: 16,
     alignItems: 'center',
+    minHeight: 52,
+    justifyContent: 'center',
   },
   submitButtonText: {
     color: '#FFF',

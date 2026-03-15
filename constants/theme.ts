@@ -104,3 +104,37 @@ export const MindMateColors = {
   a3: "#9F1239",
   a4: "#1D4ED8",
 };
+
+export const C = {
+  void:    '#060810',
+  deep:    '#0A0E1A',
+  surface: '#0F1525',
+  lift:    '#161E35',
+  card:    '#141C30',
+  neon:    '#C084FC',
+  cyan:    '#22D3EE',
+  rose:    '#FB7185',
+  amber:   '#FBBF24',
+  lime:    '#A3E635',
+  pink:    '#F472B6',
+  blue:    '#60A5FA',
+  text:    '#F1F5FF',
+  sub:     '#94A3C8',
+  muted:   '#3D4F7A',
+  border:  'rgba(192,132,252,0.12)',
+  a1:      '#7B2FBE',
+  a2:      '#0F766E',
+};
+
+export const MOOD = [
+  { e: '😞', l: 'Low',   c: '#FB7185' },
+  { e: '😔', l: 'Meh',   c: '#FB923C' },
+  { e: '😐', l: 'Okay',  c: '#FBBF24' },
+  { e: '🙂', l: 'Good',  c: '#A3E635' },
+  { e: '😊', l: 'Great', c: '#22D3EE' },
+];
+
+export const TAGS = [
+  'Work 💼', 'Anxiety 😰', 'Sleep 🌙', 'Family 🏡',
+  'Joy ✨', 'Exercise 💪', 'Stress 😤', 'Gratitude 🙏',
+];

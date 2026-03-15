@@ -60,7 +60,10 @@ export default function SignupAgeScreen() {
       <View style={styles.footer}>
         <TouchableOpacity 
           style={[styles.nextButton, !selectedAge && styles.disabledButton]}
-          onPress={() => selectedAge && router.push('/(auth)/signup-personality')}
+          onPress={() => selectedAge && router.push({
+            pathname: '/(auth)/signup-personality',
+            params: { age: selectedAge }
+          })}
           disabled={!selectedAge}
         >
           <LinearGradient

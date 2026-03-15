@@ -1,9 +1,9 @@
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, ScrollView, Platform } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useAuth } from '@/hooks/use-auth';
 
 const SETTINGS_GROUPS = [
   {
@@ -32,12 +32,13 @@ const SETTINGS_GROUPS = [
 ];
 
 export default function ProfileScreen() {
-  const router = useRouter();
+  const { user, profile, signOut } = useAuth();
 
-  const handleLogout = () => {
-    // In a real app, you'd clear auth tokens here
-    router.replace('/(auth)');
+  const handleLogout = async () => {
+    await signOut();
   };
+
+  const nameInitial = (profile?.name || user?.email || 'U').charAt(0).toUpperCase();
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -47,11 +48,11 @@ export default function ProfileScreen() {
             colors={['#8B5CF6', '#6D28D9']}
             style={styles.avatarGradient}
           >
-            <Text style={styles.avatarText}>JD</Text>
+            <Text style={styles.avatarText}>{nameInitial}</Text>
           </LinearGradient>
           <View style={styles.headerInfo}>
-            <Text style={styles.userName}>Jane Doe</Text>
-            <Text style={styles.userEmail}>jane.doe@example.com</Text>
+            <Text style={styles.userName}>{profile?.name || 'User'}</Text>
+            <Text style={styles.userEmail}>{user?.email || 'No email'}</Text>
             <View style={styles.badge}>
               <Text style={styles.badgeText}>MindMate Pro</Text>
             </View>
@@ -85,6 +86,16 @@ export default function ProfileScreen() {
                     itemIdx === group.items.length - 1 && styles.noBorder
                   ]}
                   activeOpacity={0.7}
+                  onPress={() => {
+                    if (item.id === 'logout') {
+                      handleLogout();
+                    } else if (item.id === 'profile') {
+                      // We can add a simple state or message for now
+                      alert(`${item.label} coming soon!`);
+                    } else {
+                      alert(`${item.label} feature is coming soon to MindMate Pro.`);
+                    }
+                  }}
                 >
                   <View style={styles.settingLeft}>
                     <View style={styles.settingIconContainer}>

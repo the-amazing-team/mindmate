@@ -1,6 +1,6 @@
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import React, { useState, useRef } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View, Animated, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -23,6 +23,7 @@ const OPTIONS = [
 
 export default function SignupPersonalityScreen() {
   const router = useRouter();
+  const { age } = useLocalSearchParams();
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const progressAnim = useRef(new Animated.Value(0)).current;
@@ -39,8 +40,17 @@ export default function SignupPersonalityScreen() {
         useNativeDriver: false,
       }).start();
     } else {
-      // Completed - link to dashboard
-      router.replace('/(tabs)/chat');
+      // Calculate a basic personality type based on Extraversion (Question 1)
+      // and overall responses.
+      const extraversion = newAnswers[1] || 3;
+      let pType = 'ambivert';
+      if (extraversion > 3) pType = 'extrovert';
+      if (extraversion < 3) pType = 'introvert';
+
+      router.push({
+        pathname: '/(auth)/signup',
+        params: { age, personality: pType }
+      });
     }
   };
 
