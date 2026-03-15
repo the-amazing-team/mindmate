@@ -1,0 +1,7 @@
+kokoro
+soundfile
+transformers
+torch
+datasets
+evaluate
+librosa

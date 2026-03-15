@@ -2,12 +2,11 @@ import { Colors, Radius, Spacing } from '@/constants/theme';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, ScrollView, Platform } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { authService } from '@/services/auth.service';
 import { supabase } from '@/services/supabase';
-import { useFocusEffect } from 'expo-router';
 
 const SETTINGS_GROUPS = [
   {
@@ -20,6 +19,7 @@ const SETTINGS_GROUPS = [
 ];
 
 export default function ProfileScreen() {
+
   const router = useRouter();
   const [user, setUser] = React.useState<any>(null);
 
@@ -40,6 +40,7 @@ export default function ProfileScreen() {
       console.error('Logout error', error);
     }
   };
+
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -80,13 +81,25 @@ export default function ProfileScreen() {
             <Text style={styles.groupTitle}>{group.title}</Text>
             <View style={styles.groupContent}>
               {group.items.map((item, itemIdx) => (
-                <TouchableOpacity 
-                  key={item.id} 
+                <TouchableOpacity
+                  key={item.id}
                   style={[
                     styles.settingItem,
                     itemIdx === group.items.length - 1 && styles.noBorder
                   ]}
                   activeOpacity={0.7}
+                  onPress={() => {
+                    if (item.id === 'logout') {
+                      handleLogout();
+                    } else if (item.id === 'call-agent') {
+                      router.push('/call-agent' as any);
+                    } else if (item.id === 'profile') {
+                      // We can add a simple state or message for now
+                      alert(`${item.label} coming soon!`);
+                    } else {
+                      alert(`${item.label} feature is coming soon to MindMate Pro.`);
+                    }
+                  }}
                 >
                   <View style={styles.settingLeft}>
                     <View style={styles.settingIconContainer}>
@@ -103,7 +116,7 @@ export default function ProfileScreen() {
           </View>
         ))}
 
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.logoutButton}
           onPress={handleLogout}
           activeOpacity={0.8}

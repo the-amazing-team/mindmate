@@ -2,15 +2,14 @@ import {
   AuthShell,
   Btn,
   Card,
-  Divider,
   Input,
   Spinner,
-  Toast,
+  Toast
 } from "@/components/auth";
 import { MindMateColors as C } from "@/constants/theme";
-import { useRouter } from "expo-router";
-import { useState, useEffect } from "react";
 import { authService } from "@/services/auth.service";
+import { useRouter } from "expo-router";
+import { useEffect, useState } from "react";
 
 export default function SignupScreen() {
   const router = useRouter();
@@ -42,7 +41,7 @@ export default function SignupScreen() {
       const { available } = await authService.checkEmailAvailability(email);
       setEmailAvailable(available);
       setEmailChecking(false);
-      
+
       if (!available) {
         setErrors(prev => ({ ...prev, email: "This email is already registered" }));
       } else {

@@ -12,18 +12,49 @@ datasource db {
 }
 
 model User {
-  id               String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  email            String          @unique
-  password_hash    String
-  name             String
-  auth_type        AuthType        @default(EMAIL)
-  age_group        String?
-  personality_type PersonalityType?
-  goals            String[]        @default([])
-  reminders        String?
-  onboarding_complete Boolean         @default(false)
-  is_verified      Boolean         @default(false)
-  created_at          DateTime        @default(now())
+  id                  String           @id @default(cuid())
+  email               String           @unique
+  password_hash       String
+  name                String?
+  auth_type           AuthType         @default(EMAIL)
+  age_group           String?
+  personality_type    PersonalityType?
+  goals               String[]         @default([])
+  reminders           String?
+  onboarding_complete Boolean          @default(false)
+  is_verified         Boolean          @default(false)
+  installations       Installation[]
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+}
+
+model Plugin {
+  id            String         @id @default(cuid())
+  name          String
+  description   String
+  icon          String
+  author        String
+  category      String
+  price         Float          @default(0)
+  rating        Float          @default(0)
+  reviews       Int            @default(0)
+  installs      String         @default("0")
+  code          String         // The executable JS code
+  verified      Boolean        @default(false)
+  installations Installation[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model Installation {
+  id        String   @id @default(cuid())
+  userId    String
+  pluginId  String
+  user      User     @relation(fields: [userId], references: [id])
+  plugin    Plugin   @relation(fields: [pluginId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([userId, pluginId])
 }
 
 model Otp {

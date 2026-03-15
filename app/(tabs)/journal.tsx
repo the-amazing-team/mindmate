@@ -1,393 +1,564 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { C } from '@/constants/theme';
+import { useAuth } from '@/hooks/use-auth';
+import { JournalEntry, JournalSection, useJournal } from '@/hooks/use-journal';
+import { useCallback, useState } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, TextInput,
-  StyleSheet, Animated, Modal, KeyboardAvoidingView, Platform,
-  Dimensions,
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from 'react-native';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Spacing, Radius } from '@/constants/theme';
 
-const { width } = Dimensions.get('window');
+type ScreenView = 'list' | 'write' | 'detail';
 
-const MOODS = [
-  { emoji: '😔', label: 'Awful', color: '#EF4444', score: 1 },
-  { emoji: '😟', label: 'Bad', color: '#F97316', score: 2 },
-  { emoji: '😐', label: 'Okay', color: '#F59E0B', score: 3 },
-  { emoji: '🙂', label: 'Good', color: '#10B981', score: 4 },
-  { emoji: '🤩', label: 'Amazing', color: '#8B5CF6', score: 5 },
-];
+/* ───────────────── Helpers ───────────────── */
 
-const PROMPTS = [
-  "What made you smile today?",
-  "Describe one challenge you overcame.",
-  "What are you grateful for right now?",
-  "How did your body feel today?",
-  "What's on your mind that you haven't said out loud?",
-  "Write about a moment of peace you experienced.",
-];
+function formatDate(iso: string) {
+  const d = new Date(iso);
+  const now = new Date();
 
-const SAMPLE_ENTRIES = [
-  {
-    id: '1',
-    title: 'A tough but meaningful day',
-    content: 'Today was really challenging, but I managed to push through. I had a difficult conversation with my colleague...',
-    mood: 3,
-    date: 'Today, 9:41 PM',
-    tags: ['work', 'growth'],
-  },
-  {
-    id: '2',
-    title: 'Gratitude and small wins',
-    content: 'I woke up early, made my coffee just right, and actually sat in the morning light for 10 whole minutes...',
-    mood: 5,
-    date: 'Yesterday',
-    tags: ['gratitude', 'mindfulness'],
-  },
-  {
-    id: '3',
-    title: 'Feeling overwhelmed',
-    content: 'The to-do list never seems to end. But I reminded myself that progress, not perfection, is the goal...',
-    mood: 2,
-    date: 'Mar 10',
-    tags: ['stress', 'resilience'],
-  },
-];
+  if (d.toDateString() === now.toDateString()) {
+    return (
+      'Today, ' +
+      d.toLocaleTimeString('en', { hour: 'numeric', minute: '2-digit' })
+    );
+  }
 
-function EntryCard({ entry }: { entry: typeof SAMPLE_ENTRIES[0] }) {
-  const mood = MOODS[entry.mood - 1];
-  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const y = new Date(now);
+  y.setDate(now.getDate() - 1);
 
-  useEffect(() => {
-    Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }).start();
-  }, []);
+  if (d.toDateString() === y.toDateString()) {
+    return (
+      'Yesterday, ' +
+      d.toLocaleTimeString('en', { hour: 'numeric', minute: '2-digit' })
+    );
+  }
+
+  return d.toLocaleDateString('en', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  });
+}
+
+function EmotionBadge({
+  emotion,
+  score,
+}: {
+  emotion: string | null;
+  score: number | null;
+}) {
+  if (!emotion) return null;
+
+  const intensity = score ? Math.round(score * 100) : null;
 
   return (
-    <Animated.View style={{ opacity: fadeAnim }}>
-      <TouchableOpacity style={styles.entryCard} activeOpacity={0.85}>
-        <View style={styles.entryHeader}>
-          <View style={styles.entryMoodBadge}>
-            <Text>{mood.emoji}</Text>
-            <Text style={[styles.entryMoodLabel, { color: mood.color }]}>{mood.label}</Text>
-          </View>
-          <Text style={styles.entryDate}>{entry.date}</Text>
-        </View>
-        <Text style={styles.entryTitle}>{entry.title}</Text>
-        <Text style={styles.entryPreview} numberOfLines={2}>{entry.content}</Text>
-        <View style={styles.entryTags}>
-          {entry.tags.map(tag => (
-            <View key={tag} style={styles.tagBadge}>
-              <Text style={styles.tagText}>#{tag}</Text>
-            </View>
-          ))}
-        </View>
-      </TouchableOpacity>
-    </Animated.View>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 6 }}>
+      <View
+        style={{
+          paddingHorizontal: 8,
+          paddingVertical: 3,
+          borderRadius: 12,
+          backgroundColor: C.cyan + '20',
+          borderWidth: 1,
+          borderColor: C.cyan + '44',
+        }}
+      >
+        <Text style={{ fontSize: 10, color: C.cyan, fontWeight: '700' }}>
+          {emotion}
+          {intensity ? ` · ${intensity}%` : ''}
+        </Text>
+      </View>
+    </View>
   );
 }
 
-export default function JournalScreen() {
-  const [showCompose, setShowCompose] = useState(false);
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [selectedMood, setSelectedMood] = useState<number | null>(null);
-  const [activeFilter, setActiveFilter] = useState('All');
-  const prompt = PROMPTS[Math.floor(Math.random() * PROMPTS.length)];
+function TagChip({ label }: { label: string }) {
+  return (
+    <View
+      style={{
+        paddingHorizontal: 9,
+        paddingVertical: 3,
+        borderRadius: 20,
+        backgroundColor: C.neon + '18',
+        borderWidth: 1,
+        borderColor: C.neon + '33',
+      }}
+    >
+      <Text style={{ fontSize: 10, color: C.neon, fontWeight: '600' }}>
+        {label}
+      </Text>
+    </View>
+  );
+}
 
-  const FILTERS = ['All', 'This Week', 'This Month', 'Favorites'];
+/* ───────────────── Detail View ───────────────── */
+
+function DetailView({
+  entry,
+  onBack,
+}: {
+  entry: JournalEntry;
+  onBack: () => void;
+}) {
+  return (
+    <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
+      <Animated.View entering={FadeIn.springify()}>
+        <Pressable onPress={onBack} style={{ marginBottom: 20 }}>
+          <Text style={{ fontSize: 14, color: C.sub }}>← Journal</Text>
+        </Pressable>
+
+        <Text
+          style={{
+            fontSize: 20,
+            fontWeight: '800',
+            color: C.text,
+            marginBottom: 4,
+          }}
+        >
+          {entry.title || 'Untitled'}
+        </Text>
+
+        <Text style={{ fontSize: 12, color: C.muted, marginBottom: 20 }}>
+          {formatDate(entry.created_at)}
+        </Text>
+
+        {entry.sections?.map((sec: JournalSection) => (
+          <View key={sec.id} style={s.sectionCard}>
+            <Text
+              style={{
+                fontSize: 14,
+                color: C.text,
+                lineHeight: 24,
+                marginBottom: 10,
+              }}
+            >
+              {sec.content}
+            </Text>
+
+            <EmotionBadge
+              emotion={sec.primary_emotion}
+              score={sec.emotion_score}
+            />
+
+            <View style={s.reflectionBox}>
+              <Text
+                style={{
+                  fontSize: 9,
+                  fontWeight: '700',
+                  color: C.neon,
+                  letterSpacing: 1,
+                  marginBottom: 6,
+                }}
+              >
+                AI REFLECTION
+              </Text>
+
+              {sec.reflection_text ? (
+                <Text
+                  style={{
+                    fontSize: 13,
+                    color: C.sub,
+                    lineHeight: 20,
+                    fontStyle: 'italic',
+                  }}
+                >
+                  "{sec.reflection_text}"
+                </Text>
+              ) : (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <ActivityIndicator size="small" color={C.neon} />
+                  <Text style={{ fontSize: 12, color: C.muted }}>
+                    Generating reflection...
+                  </Text>
+                </View>
+              )}
+            </View>
+          </View>
+        ))}
+      </Animated.View>
+    </ScrollView>
+  );
+}
+
+/* ───────────────── Write View ───────────────── */
+
+function WriteView({
+  onBack,
+  onSave,
+}: {
+  onBack: () => void;
+  onSave: () => void;
+}) {
+  const { user } = useAuth();
+  const { save, saving } = useJournal(user?.id);
+
+  const [title, setTitle] = useState('');
+  const [sections, setSections] = useState<string[]>(['']);
+  const [mood, setMood] = useState<number | null>(null);
+  const [selTags, setSelTags] = useState<string[]>([]);
+  const [done, setDone] = useState(false);
+  const [saveErr, setSaveErr] = useState('');
+
+  function updateSection(idx: number, val: string) {
+    setSections((prev) => prev.map((s, i) => (i === idx ? val : s)));
+  }
+
+  function addSection() {
+    setSections((prev) => [...prev, '']);
+  }
+
+  const toggleTag = useCallback(
+    (t: string) =>
+      setSelTags((p) =>
+        p.includes(t) ? p.filter((x) => x !== t) : [...p, t]
+      ),
+    []
+  );
+
+  async function handleSave() {
+    const filled = sections.filter((s) => s.trim().length > 0);
+    if (!filled.length) return;
+
+    setSaveErr('');
+
+    const { error } = await save({
+      title: title.trim() || null,
+      overall_mood: mood !== null ? `${mood}` : null,
+      content_blocks: filled,
+    });
+
+    if (error) {
+      setSaveErr(error);
+      return;
+    }
+
+    setDone(true);
+    setTimeout(onSave, 900);
+  }
+
+  if (done)
+    return (
+      <View
+        style={{
+          flex: 1,
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: C.void,
+        }}
+      >
+        <Text style={{ fontSize: 48, marginBottom: 16 }}>✦</Text>
+        <Text
+          style={{
+            fontSize: 22,
+            fontWeight: '800',
+            color: C.text,
+            marginBottom: 8,
+          }}
+        >
+          Entry saved!
+        </Text>
+        <Text style={{ fontSize: 13, color: C.sub }}>
+          AI reflections arriving shortly...
+        </Text>
+        <ActivityIndicator color={C.neon} style={{ marginTop: 20 }} />
+      </View>
+    );
 
   return (
-    <SafeAreaView style={styles.root} edges={['top']}>
-      {/* Header */}
-      <LinearGradient
-        colors={['#8B5CF6', '#EC4899']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.header}
-      >
-        <View style={styles.headerContent}>
-          <View>
-            <Text style={styles.headerTitle}>My Journal</Text>
-            <Text style={styles.headerSubtitle}>47 entries · 12 day streak 🔥</Text>
-          </View>
-          <TouchableOpacity
-            style={styles.newBtn}
-            onPress={() => setShowCompose(true)}
-          >
-            <Text style={styles.newBtnText}>+ New</Text>
-          </TouchableOpacity>
+    <ScrollView 
+      contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
+      keyboardShouldPersistTaps="handled"
+    >
+      <Pressable onPress={onBack} style={{ marginBottom: 20 }}>
+        <Text style={{ fontSize: 14, color: C.sub }}>← Cancel</Text>
+      </Pressable>
+
+      <TextInput
+        style={s.titleInput}
+        value={title}
+        onChangeText={setTitle}
+        placeholder="Entry title (optional)"
+        placeholderTextColor={C.muted}
+      />
+
+      {/* Mood Selector */}
+      <View style={{ marginBottom: 24 }}>
+        <Text style={s.label}>HOW ARE YOU FEELING?</Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }}>
+          {[
+            { e: '😞', v: 1 },
+            { e: '😔', v: 2 },
+            { e: '😐', v: 3 },
+            { e: '🙂', v: 4 },
+            { e: '😊', v: 5 },
+          ].map((m) => (
+            <Pressable
+              key={m.v}
+              onPress={() => setMood(m.v)}
+              style={[
+                s.moodBtn,
+                mood === m.v && { backgroundColor: C.a1 + '33', borderColor: C.neon }
+              ]}
+            >
+              <Text style={{ fontSize: 24 }}>{m.e}</Text>
+            </Pressable>
+          ))}
         </View>
+      </View>
 
-        {/* Writing Prompt */}
-        <View style={styles.promptBox}>
-          <Text style={styles.promptIcon}>✨</Text>
-          <Text style={styles.promptText}>"{prompt}"</Text>
-        </View>
-      </LinearGradient>
+      {/* Sections */}
+      <View style={{ marginBottom: 16 }}>
+        <Text style={s.label}>JOURNAL CONTENT</Text>
 
-      {/* Filter Bar */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.filterBar}
-        contentContainerStyle={styles.filterContent}
-      >
-        {FILTERS.map(f => (
-          <TouchableOpacity
-            key={f}
-            style={[styles.filterBtn, activeFilter === f && styles.filterBtnActive]}
-            onPress={() => setActiveFilter(f)}
-          >
-            <Text style={[styles.filterText, activeFilter === f && styles.filterTextActive]}>
-              {f}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
-      {/* Entries List */}
-      <ScrollView
-        contentContainerStyle={styles.list}
-        showsVerticalScrollIndicator={false}
-      >
-        {SAMPLE_ENTRIES.map(entry => (
-          <EntryCard key={entry.id} entry={entry} />
-        ))}
-        <View style={{ height: 32 }} />
-      </ScrollView>
-
-      {/* Compose Modal */}
-      <Modal visible={showCompose} animationType="slide" transparent>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.modalOverlay}
-        >
-          <View style={styles.composeModal}>
-            <View style={styles.composeHandle} />
-
-            <View style={styles.composeHeader}>
-              <Text style={styles.composeTitle}>New Entry</Text>
-              <TouchableOpacity onPress={() => setShowCompose(false)}>
-                <Text style={styles.closeBtn}>✕</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Mood Selector */}
-            <Text style={styles.composeMoodLabel}>How are you feeling?</Text>
-            <View style={styles.moodRow}>
-              {MOODS.map((m, i) => (
-                <TouchableOpacity
-                  key={i}
-                  onPress={() => setSelectedMood(i)}
-                  style={[
-                    styles.moodBtn,
-                    selectedMood === i && { borderColor: m.color, borderWidth: 2, backgroundColor: m.color + '20' },
-                  ]}
-                >
-                  <Text style={styles.moodEmoji}>{m.emoji}</Text>
-                  <Text style={[styles.moodLabel, { color: m.color }]}>{m.label}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
+        {sections.map((sec, i) => (
+          <View key={i} style={{ marginBottom: 10 }}>
             <TextInput
-              style={styles.titleInput}
-              placeholder="Entry title..."
-              placeholderTextColor={Colors.dark.textMuted}
-              value={title}
-              onChangeText={setTitle}
-            />
-            <TextInput
-              style={styles.contentInput}
-              placeholder="Write your thoughts here..."
-              placeholderTextColor={Colors.dark.textMuted}
-              value={content}
-              onChangeText={setContent}
+              style={s.textarea}
+              value={sec}
+              onChangeText={(val) => updateSection(i, val)}
+              placeholder="Write freely..."
+              placeholderTextColor={C.muted}
               multiline
-              textAlignVertical="top"
             />
-
-            {/* Template Picker */}
-            <View style={styles.templateRow}>
-              <Text style={styles.templateLabel}>Templates:</Text>
-              {['Daily Check-in', 'Gratitude', 'Dream Log'].map(t => (
-                <TouchableOpacity key={t} style={styles.templateChip}>
-                  <Text style={styles.templateChipText}>{t}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            <TouchableOpacity style={styles.saveBtn} onPress={() => setShowCompose(false)}>
-              <LinearGradient
-                colors={['#8B5CF6', '#EC4899']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.saveBtnGradient}
-              >
-                <Text style={styles.saveBtnText}>Save Entry ✓</Text>
-              </LinearGradient>
-            </TouchableOpacity>
           </View>
-        </KeyboardAvoidingView>
-      </Modal>
+        ))}
+
+        <Pressable onPress={addSection} style={s.addSection}>
+          <Text style={{ fontSize: 12, color: C.neon }}>
+            + Add another section
+          </Text>
+        </Pressable>
+      </View>
+
+      {saveErr ? (
+        <Text style={{ color: C.rose, marginBottom: 10 }}>⚠ {saveErr}</Text>
+      ) : null}
+
+      <Pressable
+        onPress={handleSave}
+        disabled={saving}
+        style={[s.saveBtn, saving && { opacity: 0.7 }]}
+      >
+        {saving ? (
+          <ActivityIndicator color={C.text} />
+        ) : (
+          <Text style={s.saveBtnText}>Save & Get AI Insights ✦</Text>
+        )}
+      </Pressable>
+    </ScrollView>
+  );
+}
+
+/* ───────────────── Main Screen ───────────────── */
+
+export default function JournalScreen() {
+  const { user } = useAuth();
+  const { entries, loading, error } = useJournal(user?.id);
+
+  const [view, setView] = useState<ScreenView>('list');
+  const [selected, setSelected] = useState<JournalEntry | null>(null);
+
+  if (view === 'detail' && selected) {
+    const live: JournalEntry =
+      entries.find((e) => e.id === selected.id) ?? selected;
+
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: C.void }}>
+        <DetailView
+          entry={live}
+          onBack={() => {
+            setView('list');
+            setSelected(null);
+          }}
+        />
+      </SafeAreaView>
+    );
+  }
+
+  if (view === 'write')
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: C.void }}>
+        <WriteView
+          onBack={() => setView('list')}
+          onSave={() => setView('list')}
+        />
+      </SafeAreaView>
+    );
+
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: C.void }}>
+      <View style={s.header}>
+        <View>
+          <Text style={s.title}>Journal ✦</Text>
+          <Text style={{ fontSize: 11, color: C.muted }}>
+            {loading ? 'Loading...' : `${entries.length} entries`}
+          </Text>
+        </View>
+
+        <Pressable style={s.newBtn} onPress={() => setView('write')}>
+          <Text style={s.newBtnText}>+ New</Text>
+        </Pressable>
+      </View>
+
+      {loading ? (
+        <ActivityIndicator style={{ marginTop: 40 }} color={C.neon} />
+      ) : (
+        <FlatList<JournalEntry>
+          data={entries}
+          keyExtractor={(e) => e.id}
+          contentContainerStyle={{ padding: 16 }}
+          renderItem={({ item, index }) => {
+            const firstSection = item.sections?.[0];
+
+            return (
+              <Animated.View entering={FadeInDown.delay(index * 50).springify()}>
+                <Pressable
+                  style={s.card}
+                  onPress={() => {
+                    setSelected(item);
+                    setView('detail');
+                  }}
+                >
+                  <Text style={{ fontWeight: '700', color: C.text }}>
+                    {item.title || 'Untitled'}
+                  </Text>
+
+                  <Text
+                    numberOfLines={2}
+                    style={{ fontSize: 12, color: C.sub }}
+                  >
+                    {firstSection?.content ?? ''}
+                  </Text>
+
+                  <EmotionBadge
+                    emotion={firstSection?.primary_emotion ?? null}
+                    score={firstSection?.emotion_score ?? null}
+                  />
+                </Pressable>
+              </Animated.View>
+            );
+          }}
+        />
+      )}
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: Colors.dark.bg },
+/* ───────────────── Styles ───────────────── */
 
+const s = StyleSheet.create({
   header: {
-    paddingHorizontal: Spacing.md,
-    paddingBottom: Spacing.lg,
-    borderBottomLeftRadius: Radius.xl,
-    borderBottomRightRadius: Radius.xl,
-  },
-  headerContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: Spacing.md,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 10,
   },
-  headerTitle: { fontSize: 26, fontWeight: '800', color: '#fff' },
-  headerSubtitle: { fontSize: 13, color: 'rgba(255,255,255,0.75)', marginTop: 4 },
+
+  title: { fontSize: 22, fontWeight: '800', color: C.text },
+
   newBtn: {
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: C.a1,
+    paddingVertical: 9,
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: Radius.full,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
+    borderRadius: 12,
   },
-  newBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
-  promptBox: {
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderRadius: Radius.md,
-    padding: Spacing.md,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 8,
-  },
-  promptIcon: { fontSize: 18 },
-  promptText: { fontSize: 14, color: 'rgba(255,255,255,0.9)', fontStyle: 'italic', flex: 1, lineHeight: 20 },
 
-  filterBar: { maxHeight: 56 },
-  filterContent: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    gap: Spacing.sm,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  filterBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: Radius.full,
-    backgroundColor: Colors.dark.card,
-    borderWidth: 1,
-    borderColor: Colors.dark.border,
-  },
-  filterBtnActive: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
-  },
-  filterText: { fontSize: 13, color: Colors.dark.textSecondary, fontWeight: '500' },
-  filterTextActive: { color: '#fff', fontWeight: '700' },
+  newBtnText: { color: C.text, fontSize: 13, fontWeight: '700' },
 
-  list: { padding: Spacing.md, gap: Spacing.sm },
-
-  entryCard: {
-    backgroundColor: Colors.dark.card,
-    borderRadius: Radius.lg,
-    padding: Spacing.md,
+  card: {
+    backgroundColor: C.lift,
+    borderRadius: 18,
+    padding: 14,
     borderWidth: 1,
-    borderColor: Colors.dark.border,
-    marginBottom: Spacing.sm,
+    borderColor: 'rgba(255,255,255,0.07)',
+    marginBottom: 10,
   },
-  entryHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  entryMoodBadge: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  entryMoodLabel: { fontSize: 12, fontWeight: '600' },
-  entryDate: { fontSize: 12, color: Colors.dark.textMuted },
-  entryTitle: { fontSize: 16, fontWeight: '700', color: Colors.dark.text, marginBottom: 6 },
-  entryPreview: { fontSize: 13, color: Colors.dark.textSecondary, lineHeight: 20, marginBottom: 10 },
-  entryTags: { flexDirection: 'row', gap: 6, flexWrap: 'wrap' },
-  tagBadge: {
-    backgroundColor: Colors.primary + '20',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: Radius.full,
-  },
-  tagText: { fontSize: 11, color: Colors.primaryLight, fontWeight: '600' },
 
-  modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.7)' },
-  composeModal: {
-    backgroundColor: Colors.dark.surface,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    padding: Spacing.md,
-    maxHeight: '90%',
-  },
-  composeHandle: {
-    width: 40,
-    height: 4,
-    backgroundColor: Colors.dark.muted,
-    borderRadius: 2,
-    alignSelf: 'center',
-    marginBottom: Spacing.md,
-  },
-  composeHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.md },
-  composeTitle: { fontSize: 20, fontWeight: '700', color: Colors.dark.text },
-  closeBtn: { fontSize: 18, color: Colors.dark.textSecondary, padding: 4 },
-  composeMoodLabel: { fontSize: 14, color: Colors.dark.textSecondary, marginBottom: Spacing.sm },
-  moodRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: Spacing.md },
-  moodBtn: {
-    alignItems: 'center',
-    padding: 8,
-    borderRadius: Radius.md,
-    flex: 1,
-    marginHorizontal: 2,
+  sectionCard: {
+    backgroundColor: C.lift,
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 12,
     borderWidth: 1,
-    borderColor: Colors.dark.border,
+    borderColor: 'rgba(255,255,255,0.07)',
   },
-  moodEmoji: { fontSize: 22, marginBottom: 4 },
-  moodLabel: { fontSize: 10, fontWeight: '600' },
+
+  reflectionBox: {
+    marginTop: 12,
+    backgroundColor: C.a1 + '12',
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: C.neon + '22',
+  },
+
+  label: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: C.sub,
+    letterSpacing: 1.2,
+    marginBottom: 10,
+  },
 
   titleInput: {
-    backgroundColor: Colors.dark.card,
-    borderRadius: Radius.md,
-    padding: Spacing.md,
-    color: Colors.dark.text,
+    backgroundColor: C.lift,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    color: C.text,
     fontSize: 16,
-    fontWeight: '600',
-    marginBottom: Spacing.sm,
-    borderWidth: 1,
-    borderColor: Colors.dark.border,
+    fontWeight: '700',
+    marginBottom: 20,
   },
-  contentInput: {
-    backgroundColor: Colors.dark.card,
-    borderRadius: Radius.md,
-    padding: Spacing.md,
-    color: Colors.dark.text,
-    fontSize: 14,
-    height: 140,
-    marginBottom: Spacing.sm,
-    borderWidth: 1,
-    borderColor: Colors.dark.border,
-    lineHeight: 22,
-  },
-  templateRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: Spacing.md, flexWrap: 'wrap' },
-  templateLabel: { fontSize: 12, color: Colors.dark.textMuted },
-  templateChip: {
-    backgroundColor: Colors.dark.card,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: Radius.full,
-    borderWidth: 1,
-    borderColor: Colors.dark.border,
-  },
-  templateChipText: { fontSize: 12, color: Colors.dark.textSecondary },
 
-  saveBtn: { borderRadius: Radius.md, overflow: 'hidden' },
-  saveBtnGradient: { padding: Spacing.md, alignItems: 'center' },
-  saveBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  textarea: {
+    backgroundColor: C.lift,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 16,
+    padding: 14,
+    color: C.text,
+    fontSize: 14,
+    lineHeight: 22,
+    minHeight: 120,
+  },
+
+  addSection: {
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: C.neon + '44',
+    borderStyle: 'dashed',
+  },
+
+  saveBtn: {
+    backgroundColor: C.a1,
+    paddingVertical: 16,
+    borderRadius: 16,
+    alignItems: 'center',
+  },
+
+  saveBtnText: { color: C.text, fontSize: 15, fontWeight: '700' },
+  moodBtn: {
+    width: 50,
+    height: 50,
+    borderRadius: 15,
+    backgroundColor: C.lift,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });
