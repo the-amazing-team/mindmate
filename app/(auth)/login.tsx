@@ -1,201 +1,721 @@
-import { Colors, Radius, Spacing } from '@/constants/theme';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, TextInput, KeyboardAvoidingView, Platform, ScrollView, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { authService } from '@/services/auth.service';
+import {
+  Aurora,
+  Btn,
+  Card,
+  Divider,
+  Input,
+  Spinner,
+  Stars,
+  Toast,
+} from "@/components/MindMateUI";
+import { MindMateColors as C } from "@/constants/MindMateTheme";
+import { useState } from "react";
+import { useRouter } from "expo-router";
 
+/* ════════════════════════════════════════════════
+   SHARED AUTH SHELL
+════════════════════════════════════════════════ */
+const AuthShell = ({ children }: { children: React.ReactNode }) => (
+  <div
+    style={{
+      minHeight: "100vh",
+      background: C.void,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: "20px",
+      position: "relative",
+      overflow: "hidden",
+    }}
+  >
+    <Aurora colors={[C.a1, C.a4, C.a2]} />
+    <Stars n={24} />
+    {/* Rings */}
+    {[500, 380, 260].map((s, i) => (
+      <div
+        key={i}
+        style={{
+          position: "absolute",
+          width: s,
+          height: s,
+          borderRadius: "50%",
+          border: `1px solid rgba(192,132,252,${0.04 + i * 0.03})`,
+          animation: `floatB ${7 + i}s ${i}s ease-in-out infinite`,
+          pointerEvents: "none",
+        }}
+      />
+    ))}
+    <div
+      style={{ position: "relative", zIndex: 2, width: "100%", maxWidth: 420 }}
+    >
+      {/* Logo */}
+      <div
+        style={{
+          textAlign: "center",
+          marginBottom: 32,
+          animation: "fadeUp .6s both",
+        }}
+      >
+        <div
+          style={{
+            width: 72,
+            height: 72,
+            borderRadius: 26,
+            margin: "0 auto 16px",
+            background: `linear-gradient(135deg,${C.a1},${C.neon},${C.cyan})`,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: 32,
+            boxShadow: `0 0 40px ${C.neon}55`,
+            animation: "floatB 5s ease-in-out infinite",
+          }}
+        >
+          🧠
+        </div>
+        <h1
+          style={{
+            fontFamily: "'Syne',sans-serif",
+            fontWeight: 800,
+            fontSize: 36,
+            margin: "0 0 6px",
+            background: `linear-gradient(135deg,#fff,${C.neon},${C.cyan})`,
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            backgroundSize: "200% auto",
+            animation: "shimmer 4s linear infinite",
+          }}
+        >
+          MindMate
+        </h1>
+        <p
+          style={{
+            fontSize: 13,
+            color: C.sub,
+            letterSpacing: ".15em",
+            textTransform: "uppercase",
+            fontFamily: "'Nunito',sans-serif",
+            fontWeight: 300,
+          }}
+        >
+          Reflect · Evolve · Connect
+        </p>
+      </div>
+      {children}
+    </div>
+  </div>
+);
+
+/* ════════════════════════════════════════════════
+   LOGIN SCREEN
+════════════════════════════════════════════════ */
 export default function LoginScreen() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+  const [toast, setToast] = useState<{
+    msg: string;
+    type: "ok" | "err" | "warn" | "info";
+  } | null>(null);
 
-  const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please enter email and password');
+  const validate = () => {
+    const e: Record<string, string> = {};
+    if (!email.trim()) e.email = "Email is required";
+    else if (!/\S+@\S+\.\S+/.test(email)) e.email = "Enter a valid email";
+    if (!password) e.password = "Password is required";
+    else if (password.length < 6)
+      e.password = "Password must be at least 6 characters";
+    return e;
+  };
+
+  const handleSubmit = async () => {
+    // ev?.preventDefault?.();
+    const e = validate();
+    if (Object.keys(e).length) {
+      setErrors(e);
       return;
     }
-
     setLoading(true);
-    try {
-      await authService.login(email, password);
-      router.replace('/(tabs)/chat');
-    } catch (error: any) {
-      Alert.alert('Login Failed', error.message || 'Invalid credentials');
-    } finally {
+    setErrors({});
+    
+    // UI Mock
+    setTimeout(() => {
       setLoading(false);
-    }
+      setToast({ msg: "Welcome back!", type: "ok" });
+      router.replace('/(tabs)');
+    }, 800);
+  };
+
+  const handleGoogle = async () => {
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      router.replace('/(tabs)');
+    }, 1200);
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{ flex: 1 }}
-      >
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <Text style={styles.backButtonText}>←</Text>
-          </TouchableOpacity>
+    <AuthShell>
+      {toast && (
+        <Toast
+          msg={toast.msg}
+          type={toast.type}
+          onClear={() => setToast(null)}
+        />
+      )}
+      <Card style={{ animation: "fadeUp .5s .1s both" }}>
+        <h2
+          style={{
+            fontFamily: "'Syne',sans-serif",
+            fontWeight: 800,
+            fontSize: 24,
+            margin: "0 0 6px",
+            color: C.text,
+          }}
+        >
+          Welcome back 👋
+        </h2>
+        <p
+          style={{
+            fontSize: 13,
+            color: C.sub,
+            margin: "0 0 24px",
+            fontFamily: "'Nunito',sans-serif",
+          }}
+        >
+          Sign in to continue your journey
+        </p>
 
-          <View style={styles.header}>
-            <Text style={styles.title}>Welcome Back</Text>
-            <Text style={styles.subtitle}>Sign in to continue your journey</Text>
-          </View>
+        {/* Google */}
+        <button
+          onClick={handleGoogle}
+          style={{
+            width: "100%",
+            padding: "13px",
+            borderRadius: 14,
+            background: `${C.lift}CC`,
+            border: `1px solid rgba(255,255,255,.1)`,
+            color: C.text,
+            fontSize: 14,
+            fontWeight: 600,
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 10,
+            fontFamily: "'Nunito',sans-serif",
+            transition: "all .2s",
+            marginBottom: 18,
+          }}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24">
+            <path
+              fill="#4285F4"
+              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+            />
+            <path
+              fill="#34A853"
+              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+            />
+            <path
+              fill="#FBBC05"
+              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+            />
+            <path
+              fill="#EA4335"
+              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+            />
+          </svg>
+          Continue with Google
+        </button>
 
-          <View style={styles.form}>
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Email Address</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="hello@example.com"
-                placeholderTextColor={Colors.dark.textMuted}
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
-            </View>
+        <Divider />
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Password</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="••••••••"
-                placeholderTextColor={Colors.dark.textMuted}
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-              />
-            </View>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 14,
+            marginTop: 18,
+          }}
+        >
+          <Input
+            label="Email"
+            type="email"
+            value={email}
+            onChange={(e: any) => setEmail(e.target.value)}
+            placeholder="you@example.com"
+            error={errors.email}
+            icon="📧"
+            autoComplete="email"
+            required
+          />
+          <Input
+            label="Password"
+            type="password"
+            value={password}
+            onChange={(e: any) => setPassword(e.target.value)}
+            placeholder="••••••••"
+            error={errors.password}
+            icon="🔒"
+            autoComplete="current-password"
+            required
+          />
+        </div>
 
-            <TouchableOpacity style={styles.forgotPassword}>
-              <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-            </TouchableOpacity>
+        <div style={{ textAlign: "right", marginTop: 8, marginBottom: 20 }}>
+          <button
+            onClick={() => router.push('/(auth)/forgot-password' as any)}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              color: C.neon,
+              fontSize: 12,
+              fontFamily: "'Nunito',sans-serif",
+              fontWeight: 600,
+            }}
+          >
+            Forgot password?
+          </button>
+        </div>
 
-            <TouchableOpacity 
-              style={[styles.submitButton, loading && { opacity: 0.7 }]}
-              onPress={handleLogin}
-              disabled={loading}
+        <Btn full onClick={handleSubmit} disabled={loading}>
+          {loading ? (
+            <span
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+              }}
             >
-              <LinearGradient
-                colors={['#8B5CF6', '#6D28D9']}
-                style={styles.buttonGradient}
-              >
-                <Text style={styles.submitButtonText}>{loading ? 'Logging in...' : 'Login'}</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          </View>
+              <Spinner size={16} color="#fff" /> Signing in...
+            </span>
+          ) : (
+            "Sign In →"
+          )}
+        </Btn>
 
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>Don't have an account? </Text>
-            <TouchableOpacity onPress={() => router.push('/(auth)/signup-info')}>
-              <Text style={styles.signUpLink}>Sign Up</Text>
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+        <p
+          style={{
+            textAlign: "center",
+            marginTop: 18,
+            fontSize: 13,
+            color: C.sub,
+            fontFamily: "'Nunito',sans-serif",
+          }}
+        >
+          Don't have an account?{" "}
+          <button
+            onClick={() => router.push('/(auth)/signup')}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              color: C.neon,
+              fontSize: 13,
+              fontWeight: 700,
+              fontFamily: "'Nunito',sans-serif",
+            }}
+          >
+            Sign up free
+          </button>
+        </p>
+      </Card>
+
+      {/* Requirements note */}
+      <div
+        style={{
+          marginTop: 16,
+          padding: "12px 16px",
+          borderRadius: 14,
+          background: "rgba(255,255,255,.02)",
+          border: "1px solid rgba(255,255,255,.05)",
+          animation: "fadeUp .5s .25s both",
+        }}
+      >
+        <p
+          style={{
+            margin: 0,
+            fontSize: 11,
+            color: C.muted,
+            textAlign: "center",
+            fontFamily: "'Nunito',sans-serif",
+            lineHeight: 1.6,
+          }}
+        >
+          🔒 End-to-end encrypted · 🤖 AI-powered insights · 📓 Private
+          journaling
+        </p>
+      </div>
+    </AuthShell>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.dark.bg,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    paddingHorizontal: Spacing.xl,
-    paddingTop: Spacing.md,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 40,
-  },
-  backButtonText: {
-    color: Colors.dark.text,
-    fontSize: 24,
-  },
-  header: {
-    marginBottom: 40,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: Colors.dark.text,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: Colors.dark.textSecondary,
-    marginTop: 8,
-  },
-  form: {
-    flex: 1,
-  },
-  inputContainer: {
-    marginBottom: 24,
-  },
-  label: {
-    color: Colors.dark.text,
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 10,
-    marginLeft: 4,
-  },
-  input: {
-    backgroundColor: Colors.dark.surface,
-    borderRadius: Radius.md,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    color: Colors.dark.text,
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: Colors.dark.border,
-  },
-  forgotPassword: {
-    alignSelf: 'flex-end',
-    marginBottom: 32,
-  },
-  forgotPasswordText: {
-    color: Colors.primaryLight,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  submitButton: {
-    borderRadius: Radius.lg,
-    overflow: 'hidden',
-    elevation: 4,
-  },
-  buttonGradient: {
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  submitButtonText: {
-    color: '#FFF',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 40,
-    marginBottom: 20,
-  },
-  footerText: {
-    color: Colors.dark.textSecondary,
-    fontSize: 14,
-  },
-  signUpLink: {
-    color: Colors.primaryLight,
-    fontSize: 14,
-    fontWeight: '700',
-  },
-});
+
+/* ════════════════════════════════════════════════
+   FORGOT PASSWORD SCREEN
+════════════════════════════════════════════════ */
+interface ForgotPasswordScreenProps {
+  onGoLogin: () => void;
+}
+
+export function ForgotPasswordScreen({ onGoLogin }: ForgotPasswordScreenProps) {
+  const { resetPassword } = useAuth();
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSubmit = async () => {
+    if (!email.trim() || !/\S+@\S+\.\S+/.test(email)) {
+      setError("Enter a valid email address");
+      return;
+    }
+    setLoading(true);
+    setError("");
+    const { error: err } = await resetPassword(email);
+    setLoading(false);
+    if (err) setError(err.message);
+    else setSent(true);
+  };
+
+  return (
+    <AuthShell>
+      <Card style={{ animation: "fadeUp .5s .1s both" }}>
+        {sent ? (
+          <div style={{ textAlign: "center" }}>
+            <div
+              style={{
+                width: 68,
+                height: 68,
+                borderRadius: 24,
+                margin: "0 auto 18px",
+                background: `${C.cyan}22`,
+                border: `1px solid ${C.cyan}44`,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 30,
+                animation: "floatB 4s ease-in-out infinite",
+              }}
+            >
+              📬
+            </div>
+            <h2
+              style={{
+                fontFamily: "'Syne',sans-serif",
+                fontWeight: 800,
+                fontSize: 23,
+                margin: "0 0 10px",
+                color: C.text,
+              }}
+            >
+              Reset email sent!
+            </h2>
+            <p
+              style={{
+                fontSize: 13,
+                color: C.sub,
+                lineHeight: 1.7,
+                margin: "0 0 24px",
+                fontFamily: "'Nunito',sans-serif",
+              }}
+            >
+              Check <strong style={{ color: C.cyan }}>{email}</strong> for a
+              password reset link. It expires in 1 hour.
+            </p>
+            <Btn full onClick={onGoLogin} variant="outline" color={C.cyan}>
+              Back to Sign In
+            </Btn>
+          </div>
+        ) : (
+          <>
+            <div style={{ marginBottom: 22 }}>
+              <button
+                onClick={onGoLogin}
+                style={{
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  color: C.sub,
+                  fontSize: 13,
+                  fontFamily: "'Nunito',sans-serif",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 5,
+                  padding: 0,
+                  marginBottom: 18,
+                }}
+              >
+                ← Back
+              </button>
+              <div
+                style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: 20,
+                  background: `${C.rose}22`,
+                  border: `1px solid ${C.rose}44`,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 26,
+                  animation: "floatB 4s ease-in-out infinite",
+                  marginBottom: 14,
+                }}
+              >
+                🔑
+              </div>
+              <h2
+                style={{
+                  fontFamily: "'Syne',sans-serif",
+                  fontWeight: 800,
+                  fontSize: 24,
+                  margin: "0 0 6px",
+                  color: C.text,
+                }}
+              >
+                Forgot your password?
+              </h2>
+              <p
+                style={{
+                  fontSize: 13,
+                  color: C.sub,
+                  fontFamily: "'Nunito',sans-serif",
+                  lineHeight: 1.6,
+                }}
+              >
+                Enter your email and we'll send you a reset link
+              </p>
+            </div>
+            <Input
+              label="Email address"
+              type="email"
+              value={email}
+              onChange={(e: any) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              error={error}
+              icon="📧"
+              autoComplete="email"
+            />
+            <div style={{ marginTop: 18 }}>
+              <Btn
+                full
+                onClick={handleSubmit}
+                disabled={loading}
+                color={C.rose}
+              >
+                {loading ? (
+                  <span
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 8,
+                    }}
+                  >
+                    <Spinner size={16} color="#fff" /> Sending...
+                  </span>
+                ) : (
+                  "Send Reset Link →"
+                )}
+              </Btn>
+            </div>
+            <p
+              style={{
+                textAlign: "center",
+                marginTop: 16,
+                fontSize: 12,
+                color: C.muted,
+                fontFamily: "'Nunito',sans-serif",
+                lineHeight: 1.6,
+              }}
+            >
+              Remembered it?{" "}
+              <button
+                onClick={onGoLogin}
+                style={{
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  color: C.neon,
+                  fontSize: 12,
+                  fontWeight: 700,
+                  fontFamily: "'Nunito',sans-serif",
+                }}
+              >
+                Sign in
+              </button>
+            </p>
+          </>
+        )}
+      </Card>
+    </AuthShell>
+  );
+}
+
+/* ════════════════════════════════════════════════
+   RESET PASSWORD SCREEN (deep link landing)
+════════════════════════════════════════════════ */
+interface ResetPasswordScreenProps {
+  onDone: () => void;
+}
+
+export function ResetPasswordScreen({ onDone }: ResetPasswordScreenProps) {
+  const { updatePassword } = useAuth();
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(false);
+  const [done, setDone] = useState(false);
+
+  const handleSubmit = async () => {
+    const e: Record<string, string> = {};
+    if (password.length < 8) e.password = "At least 8 characters required";
+    if (password !== confirm) e.confirm = "Passwords do not match";
+    if (Object.keys(e).length) {
+      setErrors(e);
+      return;
+    }
+    setLoading(true);
+    setErrors({});
+    const { error } = await updatePassword(password);
+    setLoading(false);
+    if (error) setErrors({ password: error.message });
+    else setDone(true);
+  };
+
+  return (
+    <AuthShell>
+      <Card style={{ animation: "fadeUp .5s .1s both" }}>
+        {done ? (
+          <div style={{ textAlign: "center" }}>
+            <div
+              style={{
+                fontSize: 48,
+                margin: "0 0 16px",
+                animation: "floatB 4s ease-in-out infinite",
+              }}
+            >
+              🎉
+            </div>
+            <h2
+              style={{
+                fontFamily: "'Syne',sans-serif",
+                fontWeight: 800,
+                fontSize: 24,
+                margin: "0 0 10px",
+                color: C.text,
+              }}
+            >
+              Password updated!
+            </h2>
+            <p
+              style={{
+                fontSize: 14,
+                color: C.sub,
+                margin: "0 0 24px",
+                fontFamily: "'Nunito',sans-serif",
+              }}
+            >
+              You can now sign in with your new password.
+            </p>
+            <Btn full onClick={onDone}>
+              Continue to App →
+            </Btn>
+          </div>
+        ) : (
+          <>
+            <div
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: 20,
+                background: `${C.lime}22`,
+                border: `1px solid ${C.lime}44`,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 26,
+                marginBottom: 16,
+                animation: "floatB 4s ease-in-out infinite",
+              }}
+            >
+              🔒
+            </div>
+            <h2
+              style={{
+                fontFamily: "'Syne',sans-serif",
+                fontWeight: 800,
+                fontSize: 24,
+                margin: "0 0 6px",
+                color: C.text,
+              }}
+            >
+              Set new password
+            </h2>
+            <p
+              style={{
+                fontSize: 13,
+                color: C.sub,
+                margin: "0 0 22px",
+                fontFamily: "'Nunito',sans-serif",
+              }}
+            >
+              Choose a strong password for your account
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              <Input
+                label="New Password"
+                type="password"
+                value={password}
+                onChange={(e: any) => setPassword(e.target.value)}
+                placeholder="Min 8 characters"
+                error={errors.password}
+                icon="🔒"
+                autoComplete="new-password"
+              />
+              <Input
+                label="Confirm Password"
+                type="password"
+                value={confirm}
+                onChange={(e: any) => setConfirm(e.target.value)}
+                placeholder="Re-enter password"
+                error={errors.confirm}
+                icon="🔐"
+                autoComplete="new-password"
+              />
+            </div>
+            <div style={{ marginTop: 20 }}>
+              <Btn
+                full
+                onClick={handleSubmit}
+                disabled={loading}
+                color={C.lime}
+              >
+                {loading ? (
+                  <span
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 8,
+                    }}
+                  >
+                    <Spinner size={16} color="#fff" /> Updating...
+                  </span>
+                ) : (
+                  "Update Password →"
+                )}
+              </Btn>
+            </div>
+          </>
+        )}
+      </Card>
+    </AuthShell>
+  );
+}
