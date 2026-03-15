@@ -12,12 +12,20 @@ datasource db {
 }
 
 model User {
-  id            String         @id @default(cuid())
-  email         String         @unique
-  name          String?
-  installations Installation[]
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  id                  String           @id @default(cuid())
+  email               String           @unique
+  password_hash       String
+  name                String?
+  auth_type           AuthType         @default(EMAIL)
+  age_group           String?
+  personality_type    PersonalityType?
+  goals               String[]         @default([])
+  reminders           String?
+  onboarding_complete Boolean          @default(false)
+  is_verified         Boolean          @default(false)
+  installations       Installation[]
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
 }
 
 model Plugin {
@@ -47,18 +55,6 @@ model Installation {
   createdAt DateTime @default(now())
 
   @@unique([userId, pluginId])
-  id               String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  email            String          @unique
-  password_hash    String
-  name             String
-  auth_type        AuthType        @default(EMAIL)
-  age_group        String?
-  personality_type PersonalityType?
-  goals            String[]        @default([])
-  reminders        String?
-  onboarding_complete Boolean         @default(false)
-  is_verified      Boolean         @default(false)
-  created_at          DateTime        @default(now())
 }
 
 model Otp {
