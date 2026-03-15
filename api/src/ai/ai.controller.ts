@@ -1,6 +1,9 @@
 import { Controller, Post, Body, BadRequestException, Logger } from '@nestjs/common';
 import { AiService } from './ai.service';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { PipelineDto } from './dto/pipeline.dto';
 
+@ApiTags('AI')
 @Controller('ai')
 export class AiController {
   private readonly logger = new Logger(AiController.name);
@@ -8,7 +11,10 @@ export class AiController {
   constructor(private readonly aiService: AiService) {}
 
   @Post('pipeline')
-  async runPipeline(@Body() body: { pipeline: string; payload: any }): Promise<any> {
+  @ApiOperation({ summary: 'Run an AI pipeline' })
+  @ApiResponse({ status: 200, description: 'Pipeline executed successfully' })
+  @ApiResponse({ status: 400, description: 'Unknown pipeline' })
+  async runPipeline(@Body() body: PipelineDto): Promise<any> {
     const { pipeline, payload } = body;
     this.logger.log(`Running pipeline ${pipeline}`);
 
