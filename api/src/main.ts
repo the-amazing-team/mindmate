@@ -1,8 +1,14 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import * as express from 'express';
+import * as path from 'path';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  
+  // Serve static files from uploads directory
+  app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+
   app.enableCors({
     origin: process.env.ALLOWED_ORIGINS?.split(',') ?? ['http://localhost:8081', 'http://localhost:19006'],
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],

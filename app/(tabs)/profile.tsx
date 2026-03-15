@@ -1,44 +1,46 @@
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, ScrollView } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAuth } from '@/hooks/use-auth';
+
+import { authService } from '@/services/auth.service';
+import { supabase } from '@/services/supabase';
 
 const SETTINGS_GROUPS = [
   {
     title: 'Account',
     items: [
       { id: 'profile', label: 'Edit Profile', icon: '👤' },
-      { id: 'preferences', label: 'App Preferences', icon: '⚙️' },
-      { id: 'subscription', label: 'Subscription', icon: '💎', badge: 'Pro' },
-    ],
-  },
-  {
-    title: 'Wellness',
-    items: [
-      { id: 'daily-goal', label: 'Daily Goal', icon: '🎯' },
-      { id: 'reminders', label: 'Reminders', icon: '🔔' },
-    ],
-  },
-  {
-    title: 'Support',
-    items: [
-      { id: 'help', label: 'Help Center', icon: '❓' },
-      { id: 'privacy', label: 'Privacy Policy', icon: '🔒' },
-      { id: 'terms', label: 'Terms of Service', icon: '📄' },
+      { id: 'notifications', label: 'Notifications', icon: '🔔' },
     ],
   },
 ];
 
 export default function ProfileScreen() {
-  const { user, profile, signOut } = useAuth();
+
+  const router = useRouter();
+  const [user, setUser] = React.useState<any>(null);
+
+  React.useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) {
+        // Fetch full profile from backend if needed
+        setUser(data.user);
+      }
+    });
+  }, []);
 
   const handleLogout = async () => {
-    await signOut();
+    try {
+      await authService.signOut();
+      router.replace('/(auth)');
+    } catch (error) {
+      console.error('Logout error', error);
+    }
   };
 
-  const nameInitial = (profile?.name || user?.email || 'U').charAt(0).toUpperCase();
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -48,13 +50,13 @@ export default function ProfileScreen() {
             colors={['#8B5CF6', '#6D28D9']}
             style={styles.avatarGradient}
           >
-            <Text style={styles.avatarText}>{nameInitial}</Text>
+            <Text style={styles.avatarText}>{user?.email?.substring(0, 2).toUpperCase() || 'JD'}</Text>
           </LinearGradient>
           <View style={styles.headerInfo}>
-            <Text style={styles.userName}>{profile?.name || 'User'}</Text>
-            <Text style={styles.userEmail}>{user?.email || 'No email'}</Text>
+            <Text style={styles.userName}>{user?.user_metadata?.full_name || 'User'}</Text>
+            <Text style={styles.userEmail}>{user?.email || 'jane.doe@example.com'}</Text>
             <View style={styles.badge}>
-              <Text style={styles.badgeText}>MindMate Pro</Text>
+              <Text style={styles.badgeText}>MindMate Member</Text>
             </View>
           </View>
         </View>
@@ -79,8 +81,8 @@ export default function ProfileScreen() {
             <Text style={styles.groupTitle}>{group.title}</Text>
             <View style={styles.groupContent}>
               {group.items.map((item, itemIdx) => (
-                <TouchableOpacity 
-                  key={item.id} 
+                <TouchableOpacity
+                  key={item.id}
                   style={[
                     styles.settingItem,
                     itemIdx === group.items.length - 1 && styles.noBorder
@@ -89,6 +91,8 @@ export default function ProfileScreen() {
                   onPress={() => {
                     if (item.id === 'logout') {
                       handleLogout();
+                    } else if (item.id === 'call-agent') {
+                      router.push('/call-agent' as any);
                     } else if (item.id === 'profile') {
                       // We can add a simple state or message for now
                       alert(`${item.label} coming soon!`);
@@ -104,11 +108,6 @@ export default function ProfileScreen() {
                     <Text style={styles.settingLabel}>{item.label}</Text>
                   </View>
                   <View style={styles.settingRight}>
-                    {item.badge && (
-                      <View style={styles.proBadge}>
-                        <Text style={styles.proBadgeText}>{item.badge}</Text>
-                      </View>
-                    )}
                     <Text style={styles.chevron}>›</Text>
                   </View>
                 </TouchableOpacity>
@@ -117,7 +116,7 @@ export default function ProfileScreen() {
           </View>
         ))}
 
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.logoutButton}
           onPress={handleLogout}
           activeOpacity={0.8}
