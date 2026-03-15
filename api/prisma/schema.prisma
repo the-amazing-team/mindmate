@@ -16,15 +16,33 @@ model User {
   email            String          @unique
   password_hash    String
   name             String
+  auth_type        AuthType        @default(EMAIL)
   age_group        String?
   personality_type PersonalityType?
-  created_at       DateTime        @default(now())
+  goals            String[]        @default([])
+  reminders        String?
+  onboarding_complete Boolean         @default(false)
+  is_verified      Boolean         @default(false)
+  created_at          DateTime        @default(now())
+}
+
+model Otp {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email     String
+  otp       String
+  expires_at DateTime
+  created_at DateTime @default(now())
+
+  @@index([email])
+}
+
+enum AuthType {
+  GOOGLE
+  EMAIL
 }
 
 enum PersonalityType {
-  OPENNESS
-  CONSCIENTIOUSNESS
-  EXTRAVERSION
-  AGREEABLENESS
-  NEUROTICISM
+  INTROVERT
+  EXTROVERT
+  AMBIVERT
 }

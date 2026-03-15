@@ -8,7 +8,11 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "server": "pnpm --prefix api start:dev",
+    "db:migrate": "pnpm --prefix api run prisma:migrate",
+    "db:generate": "pnpm --prefix api run prisma:generate",
+    "db:reset": "pnpm --prefix api run prisma:reset"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
