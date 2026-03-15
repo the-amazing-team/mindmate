@@ -4,6 +4,7 @@ import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/hooks/use-auth';
+import { useRouter } from 'expo-router';
 
 const SETTINGS_GROUPS = [
   {
@@ -22,6 +23,12 @@ const SETTINGS_GROUPS = [
     ],
   },
   {
+    title: 'Voice Interaction',
+    items: [
+      { id: 'call-agent', label: 'Call AI Agent', icon: '🎙️', badge: 'New' },
+    ],
+  },
+  {
     title: 'Support',
     items: [
       { id: 'help', label: 'Help Center', icon: '❓' },
@@ -33,6 +40,7 @@ const SETTINGS_GROUPS = [
 
 export default function ProfileScreen() {
   const { user, profile, signOut } = useAuth();
+  const router = useRouter();
 
   const handleLogout = async () => {
     await signOut();
@@ -89,6 +97,8 @@ export default function ProfileScreen() {
                   onPress={() => {
                     if (item.id === 'logout') {
                       handleLogout();
+                    } else if (item.id === 'call-agent') {
+                      router.push('/call-agent' as any);
                     } else if (item.id === 'profile') {
                       // We can add a simple state or message for now
                       alert(`${item.label} coming soon!`);
