@@ -1,14 +1,5 @@
-import {
-  Aurora,
-  Btn,
-  Card,
-  Divider,
-  Input,
-  Spinner,
-  Stars,
-  Toast,
-} from "@/components/MindMateUI";
-import { MindMateColors as C } from "@/constants/MindMateTheme";
+import { Aurora, Btn, Card, Divider, Input, Spinner, Stars, Toast } from "@/components/auth";
+import { MindMateColors as C } from "@/constants/theme";
 import { useState } from "react";
 import { useRouter } from "expo-router";
 
@@ -364,7 +355,6 @@ interface ForgotPasswordScreenProps {
 }
 
 export function ForgotPasswordScreen({ onGoLogin }: ForgotPasswordScreenProps) {
-  const { resetPassword } = useAuth();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
@@ -377,10 +367,12 @@ export function ForgotPasswordScreen({ onGoLogin }: ForgotPasswordScreenProps) {
     }
     setLoading(true);
     setError("");
-    const { error: err } = await resetPassword(email);
-    setLoading(false);
-    if (err) setError(err.message);
-    else setSent(true);
+    
+    // UI Mock
+    setTimeout(() => {
+      setLoading(false);
+      setSent(true);
+    }, 1000);
   };
 
   return (
@@ -566,7 +558,6 @@ interface ResetPasswordScreenProps {
 }
 
 export function ResetPasswordScreen({ onDone }: ResetPasswordScreenProps) {
-  const { updatePassword } = useAuth();
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -583,10 +574,12 @@ export function ResetPasswordScreen({ onDone }: ResetPasswordScreenProps) {
     }
     setLoading(true);
     setErrors({});
-    const { error } = await updatePassword(password);
-    setLoading(false);
-    if (error) setErrors({ password: error.message });
-    else setDone(true);
+    
+    // UI Mock
+    setTimeout(() => {
+      setLoading(false);
+      setDone(true);
+    }, 1000);
   };
 
   return (

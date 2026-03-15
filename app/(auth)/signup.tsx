@@ -1,14 +1,5 @@
-import {
-  Aurora,
-  Btn,
-  Card,
-  Divider,
-  Input,
-  Spinner,
-  Stars,
-  Toast,
-} from "@/components/MindMateUI";
-import { MindMateColors as C } from "@/constants/MindMateTheme";
+import { Aurora, Btn, Card, Divider, Input, Spinner, Stars, Toast } from "@/components/auth";
+import { MindMateColors as C } from "@/constants/theme";
 import { useState } from "react";
 import { useRouter } from "expo-router";
 

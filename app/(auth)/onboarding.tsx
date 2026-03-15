@@ -1,5 +1,5 @@
-import { BackBtn, Btn, ProgressDots, Screen } from "@/components/MindMateUI";
-import { MindMateColors as C, MOOD_DATA } from "@/constants/MindMateTheme";
+import { BackBtn, Btn, ProgressDots, Screen } from "@/components/auth";
+import { MindMateColors as C, MOOD_DATA } from "@/constants/theme";
 import { ReactNode, useState } from "react";
 
 interface OBWrapProps {
