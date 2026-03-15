@@ -1,50 +1,6 @@
-import { BackBtn, Btn, ProgressDots, Screen } from "@/components/auth";
+import { Btn, OBWrap } from "@/components/auth";
 import { MindMateColors as C, MOOD_DATA } from "@/constants/theme";
-import { ReactNode, useState } from "react";
-
-interface OBWrapProps {
-  step: number;
-  total: number;
-  onBack: () => void;
-  aurora: string[];
-  children: ReactNode;
-}
-
-const OBWrap = ({ step, total, onBack, aurora, children }: OBWrapProps) => (
-  <Screen aurora={aurora} stars={11} scroll={false}>
-    <div
-      style={{
-        flex: 1,
-        display: "flex",
-        flexDirection: "column",
-        padding: "13px 21px 24px",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 13,
-        }}
-      >
-        <BackBtn onClick={onBack} />
-        <ProgressDots step={step} total={total} />
-        <span
-          style={{
-            fontSize: 11,
-            color: C.muted,
-            fontFamily: "'Nunito',sans-serif",
-            fontWeight: 700,
-          }}
-        >
-          {step}/{total}
-        </span>
-      </div>
-      {children}
-    </div>
-  </Screen>
-);
+import { useState } from "react";
 
 export default function OnboardingScreen({
   onComplete,
@@ -263,7 +219,7 @@ function PersonalityStep({
         else introScore += s;
       });
 
-      // Simple inference: 
+      // Simple inference:
       // max score for each type is 2 questions * 5 = 10
       // If one is significantly higher, we pick it.
       // If they are close, it's an Ambivert.
@@ -271,7 +227,7 @@ function PersonalityStep({
       let result = "ambivert";
       if (diff > 2) result = "extrovert";
       if (diff < -2) result = "introvert";
-      
+
       onChange(result);
     }
   };
@@ -279,29 +235,100 @@ function PersonalityStep({
   if (value) {
     // Show summary/result before moving on
     const resultData = {
-      introvert: { emoji: "🧠", title: "Introvert", sub: "Deep thinker & reflective" },
-      extrovert: { emoji: "⚡", title: "Extrovert", sub: "Outward & expressive" },
+      introvert: {
+        emoji: "🧠",
+        title: "Introvert",
+        sub: "Deep thinker & reflective",
+      },
+      extrovert: {
+        emoji: "⚡",
+        title: "Extrovert",
+        sub: "Outward & expressive",
+      },
       ambivert: { emoji: "🌊", title: "Ambivert", sub: "Balanced & adaptive" },
-    }[value as "introvert" | "extrovert" | "ambivert"] || { emoji: "✨", title: value, sub: "" };
+    }[value as "introvert" | "extrovert" | "ambivert"] || {
+      emoji: "✨",
+      title: value,
+      sub: "",
+    };
 
     return (
-      <OBWrap step={2} total={5} onBack={() => { onChange(""); setQIdx(0); setScores([]); }} aurora={[C.a3, C.a1, C.a4]}>
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", animation: "fadeUp .5s both" }}>
-          <div style={{ width: 80, height: 80, borderRadius: 28, background: `${C.amber}22`, border: `1px solid ${C.amber}44`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36, marginBottom: 20 }}>
+      <OBWrap
+        step={2}
+        total={5}
+        onBack={() => {
+          onChange("");
+          setQIdx(0);
+          setScores([]);
+        }}
+        aurora={[C.a3, C.a1, C.a4]}
+      >
+        <div
+          style={{
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            textAlign: "center",
+            animation: "fadeUp .5s both",
+          }}
+        >
+          <div
+            style={{
+              width: 80,
+              height: 80,
+              borderRadius: 28,
+              background: `${C.amber}22`,
+              border: `1px solid ${C.amber}44`,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 36,
+              marginBottom: 20,
+            }}
+          >
             {resultData.emoji}
           </div>
-          <h2 style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: 30, margin: "0 0 8px", color: C.text }}>
+          <h2
+            style={{
+              fontFamily: "'Syne',sans-serif",
+              fontWeight: 800,
+              fontSize: 30,
+              margin: "0 0 8px",
+              color: C.text,
+            }}
+          >
             You're an {resultData.title}!
           </h2>
-          <p style={{ fontFamily: "'Nunito',sans-serif", color: C.sub, fontSize: 16, marginBottom: 32 }}>
+          <p
+            style={{
+              fontFamily: "'Nunito',sans-serif",
+              color: C.sub,
+              fontSize: 16,
+              marginBottom: 32,
+            }}
+          >
             {resultData.sub}
           </p>
           <Btn full onClick={onNext} color={C.amber}>
             Continue
           </Btn>
-          <button 
-            onClick={() => { onChange(""); setQIdx(0); setScores([]); }}
-            style={{ background: "none", border: "none", color: C.muted, fontSize: 13, marginTop: 16, cursor: "pointer", fontWeight: 600 }}
+          <button
+            onClick={() => {
+              onChange("");
+              setQIdx(0);
+              setScores([]);
+            }}
+            style={{
+              background: "none",
+              border: "none",
+              color: C.muted,
+              fontSize: 13,
+              marginTop: 16,
+              cursor: "pointer",
+              fontWeight: 600,
+            }}
           >
             Retake Quiz
           </button>
@@ -313,17 +340,43 @@ function PersonalityStep({
   return (
     <OBWrap step={2} total={5} onBack={onBack} aurora={[C.a3, C.a1, C.a4]}>
       <div style={{ animation: "fadeUp .45s both" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-          <span style={{ fontSize: 11, color: C.muted, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 12,
+          }}
+        >
+          <span
+            style={{
+              fontSize: 11,
+              color: C.muted,
+              fontWeight: 700,
+              letterSpacing: ".1em",
+              textTransform: "uppercase",
+            }}
+          >
             PERSONALITY QUIZ · Q{qIdx + 1}/{questions.length}
           </span>
         </div>
-        <h2 style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: 24, margin: "0 0 30px", color: C.text, lineHeight: 1.4 }}>
+        <h2
+          style={{
+            fontFamily: "'Syne',sans-serif",
+            fontWeight: 800,
+            fontSize: 24,
+            margin: "0 0 30px",
+            color: C.text,
+            lineHeight: 1.4,
+          }}
+        >
           {questions[qIdx].q}
         </h2>
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 12, flex: 1 }}>
+      <div
+        style={{ display: "flex", flexDirection: "column", gap: 12, flex: 1 }}
+      >
         {[
           { label: "Strongly Agree", val: 5, col: C.neon },
           { label: "Agree", val: 4, col: `${C.neon}dd` },
@@ -348,11 +401,19 @@ function PersonalityStep({
               textAlign: "left",
               display: "flex",
               alignItems: "center",
-              justifyContent: "space-between"
+              justifyContent: "space-between",
             }}
           >
             {opt.label}
-            <div style={{ width: 12, height: 12, borderRadius: 6, background: opt.col, opacity: .5 }} />
+            <div
+              style={{
+                width: 12,
+                height: 12,
+                borderRadius: 6,
+                background: opt.col,
+                opacity: 0.5,
+              }}
+            />
           </button>
         ))}
       </div>

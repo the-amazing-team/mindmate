@@ -1,7 +1,15 @@
-import { AuthShell, Aurora, Btn, Card, Divider, Input, Spinner, Stars, Toast } from "@/components/auth";
+import {
+  AuthShell,
+  Btn,
+  Card,
+  Divider,
+  Input,
+  Spinner,
+  Toast,
+} from "@/components/auth";
 import { MindMateColors as C } from "@/constants/theme";
-import { useState } from "react";
 import { useRouter } from "expo-router";
+import { useState } from "react";
 
 export default function SignupScreen() {
   const router = useRouter();
@@ -51,7 +59,7 @@ export default function SignupScreen() {
     }
     setLoading(true);
     setErrors({});
-    
+
     // UI Mock
     setTimeout(() => {
       setLoading(false);
@@ -104,7 +112,12 @@ export default function SignupScreen() {
             <strong style={{ color: C.neon }}>{email}</strong>. Click it to
             activate your account.
           </p>
-          <Btn full onClick={() => router.push('/(auth)/login')} variant="outline" color={C.neon}>
+          <Btn
+            full
+            onClick={() => router.push("/(auth)")}
+            variant="outline"
+            color={C.neon}
+          >
             Back to Sign In
           </Btn>
         </Card>
@@ -149,7 +162,7 @@ export default function SignupScreen() {
             setLoading(true);
             setTimeout(() => {
               setLoading(false);
-              router.replace('/(tabs)');
+              router.replace("/(tabs)");
             }, 1200);
           }}
           style={{
@@ -431,7 +444,7 @@ export default function SignupScreen() {
         >
           Already have an account?{" "}
           <button
-            onClick={() => router.push('/(auth)/login')}
+            onClick={() => router.push("/(auth)")}
             style={{
               background: "none",
               border: "none",
