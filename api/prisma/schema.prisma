@@ -27,6 +27,7 @@ model User {
   createdAt           DateTime         @default(now())
   updatedAt           DateTime         @updatedAt
   journal_entries     JournalEntry[]
+  insights            Insight[]
 }
 
 model JournalEntry {
@@ -36,6 +37,7 @@ model JournalEntry {
   title        String?
   overall_mood String
   sections     JournalSection[]
+  insights     Insight[]
   created_at   DateTime         @default(now())
   updated_at   DateTime         @updatedAt
 
@@ -53,6 +55,21 @@ model JournalSection {
   reflection_text  String?
   created_at       DateTime     @default(now())
 
+  @@index([journal_entry_id])
+}
+
+model Insight {
+  id               String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id          String
+  user             User          @relation(fields: [user_id], references: [id])
+  journal_entry_id String?       @db.Uuid
+  journal_entry    JournalEntry? @relation(fields: [journal_entry_id], references: [id], onDelete: SetNull)
+  summary          String        @db.Text
+  recommendation   String        @db.Text
+  patterns         Json?
+  created_at       DateTime      @default(now())
+
+  @@index([user_id])
   @@index([journal_entry_id])
 }
 

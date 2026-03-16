@@ -298,7 +298,10 @@ function PluginCard({ plugin, onPress }: { plugin: any; onPress: () => void }) {
         <Animated.View style={{ transform: [{ scale: installAnim }] }}>
           <TouchableOpacity
             style={[styles.installBtn, plugin.isInstalled && styles.installedBtn]}
-            onPress={onPress}
+            onPress={(e) => {
+              e.stopPropagation();
+              onPress();
+            }}
           >
             <Text style={[styles.installBtnText, plugin.isInstalled && styles.installedBtnText]}>
               {plugin.isInstalled ? '✓ Installed' : plugin.price === 0 ? 'Free' : `$${plugin.price}`}
@@ -327,7 +330,7 @@ function PluginCard({ plugin, onPress }: { plugin: any; onPress: () => void }) {
 
 // ─── Plugin Detail Modal ──────────────────────────────────────────────────────
 
-function PluginDetail({ plugin, onClose }: { plugin: any; onClose: () => void }) {
+function PluginDetail({ plugin, onClose, onInstall }: { plugin: any; onClose: () => void; onInstall: (id: string) => void }) {
   if (!plugin) return null;
 
   return (
@@ -394,7 +397,7 @@ function PluginDetail({ plugin, onClose }: { plugin: any; onClose: () => void })
 
             <TouchableOpacity
               style={detailStyles.installBtn}
-              onPress={() => {}}
+              onPress={() => onInstall(plugin.id)}
             >
               <LinearGradient
                 colors={plugin.isInstalled ? ['#6B7280', '#4B5563'] : ['#8B5CF6', '#6D28D9']}
@@ -491,23 +494,29 @@ const detailStyles = StyleSheet.create({
 
 export default function PluginsScreen() {
   const router = useRouter();
-  const user = null;
-  const plugins: any[] = [];
-  const installedIds: any[] = [];
-  const loading = false;
-  const installPlugin = async (id: string) => {};
   
+  const [installedIds, setInstalledIds] = useState<string[]>(['p2', 'p6', 'fp2']);
   const [activeCategory, setActiveCategory] = useState('All');
   const [searchText, setSearchText] = useState('');
-  const [selectedPlugin, setSelectedPlugin] = useState<Plugin | null>(null);
+  const [selectedPlugin, setSelectedPlugin] = useState<any>(null);
   const [activePage, setActivePage] = useState<'marketplace' | 'sdk' | 'installed'>('marketplace');
   const headerAnim = useRef(new Animated.Value(0)).current;
 
+  const installPlugin = (id: string) => {
+    setInstalledIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
+
   // Enrich plugins with installation state
-  const enrichedPlugins = plugins.map(p => ({
+  const enrichedPlugins = ALL_PLUGINS.map(p => ({
     ...p,
     isInstalled: installedIds.includes(p.id),
-    tags: (p as any).tags || [], // Handle missing tags if any
+  }));
+
+  const featuredEnriched = FEATURED_PLUGINS.map(p => ({
+    ...p,
+    isInstalled: installedIds.includes(p.id),
   }));
 
   useEffect(() => {
@@ -587,14 +596,14 @@ export default function PluginsScreen() {
             <>
               <Text style={styles.sectionTitle}>⭐ Featured Plugins</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.featuredRow}>
-                {enrichedPlugins.slice(0, 2).map(p => (
+                {featuredEnriched.map(p => (
                   <TouchableOpacity
                     key={p.id}
                     onPress={() => setSelectedPlugin(p)}
                     activeOpacity={0.9}
                     style={styles.featuredCard}
                   >
-                    <LinearGradient colors={p.category === 'Analytics' ? ['#8B5CF6', '#EC4899'] : ['#10B981', '#06B6D4']} style={styles.featuredGrad}>
+                    <LinearGradient colors={p.gradient} style={styles.featuredGrad}>
                       <View style={styles.featuredHeader}>
                         <Text style={styles.featuredIcon}>{p.icon}</Text>
                         {p.verified && (
@@ -604,14 +613,20 @@ export default function PluginsScreen() {
                         )}
                       </View>
                       <Text style={styles.featuredName}>{p.name}</Text>
-                      <Text style={styles.featuredDesc} numberOfLines={2}>{p.description}</Text>
+                      <Text style={styles.featuredDesc} numberOfLines={2}>{p.desc}</Text>
                       <View style={styles.featuredFooter}>
                         <Text style={styles.featuredRating}>⭐ {p.rating}</Text>
-                        <View style={[styles.featuredPrice, p.isInstalled && styles.featuredPriceInstalled]}>
+                        <TouchableOpacity 
+                          style={[styles.featuredPrice, p.isInstalled && styles.featuredPriceInstalled]}
+                          onPress={(e) => {
+                            e.stopPropagation();
+                            installPlugin(p.id);
+                          }}
+                        >
                           <Text style={styles.featuredPriceText}>
                             {p.isInstalled ? '✓ Installed' : p.price === 0 ? 'Free' : `$${p.price}`}
                           </Text>
-                        </View>
+                        </TouchableOpacity>
                       </View>
                     </LinearGradient>
                   </TouchableOpacity>
@@ -661,7 +676,7 @@ export default function PluginsScreen() {
           </Text>
           <View style={styles.pluginList}>
             {filteredPlugins.map(p => (
-              <PluginCard key={p.id} plugin={p} onPress={() => setSelectedPlugin(p)} />
+              <PluginCard key={p.id} plugin={p} onPress={() => installPlugin(p.id)} />
             ))}
           </View>
 
@@ -689,7 +704,11 @@ export default function PluginsScreen() {
         </ScrollView>
       )}
 
-      <PluginDetail plugin={selectedPlugin} onClose={() => setSelectedPlugin(null)} />
+      <PluginDetail 
+        plugin={selectedPlugin ? enrichedPlugins.find(p => p.id === selectedPlugin.id) || featuredEnriched.find(p => p.id === selectedPlugin.id) : null} 
+        onInstall={installPlugin} 
+        onClose={() => setSelectedPlugin(null)} 
+      />
     </SafeAreaView>
   );
 }

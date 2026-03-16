@@ -1,6 +1,8 @@
 import { C } from '@/constants/theme';
 import { JournalEntry, JournalSection, useJournal } from '@/hooks/use-journal';
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useEffect } from 'react';
+import { useInsights } from '@/hooks/use-insights';
+import { Insight } from '@/services/insight.service';
 import {
   ActivityIndicator,
   FlatList,
@@ -99,6 +101,7 @@ function TagChip({ label }: { label: string }) {
 
 /* ───────────────── Detail View ───────────────── */
 
+
 function DetailView({
   entry,
   onBack,
@@ -106,6 +109,20 @@ function DetailView({
   entry: JournalEntry;
   onBack: () => void;
 }) {
+  const { getEntryInsight } = useInsights();
+  const [insight, setInsight] = useState<Insight | null>(null);
+  const [loadingInsight, setLoadingInsight] = useState(false);
+
+  useEffect(() => {
+    async function load() {
+      setLoadingInsight(true);
+      const res = await getEntryInsight(entry.id);
+      setInsight(res);
+      setLoadingInsight(false);
+    }
+    load();
+  }, [entry.id]);
+
   return (
     <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
       <Animated.View entering={FadeIn.springify()}>
@@ -127,6 +144,34 @@ function DetailView({
         <Text style={{ fontSize: 12, color: C.muted, marginBottom: 20 }}>
           {formatDate(entry.created_at)}
         </Text>
+
+        {/* Entry Insight Card */}
+        {(loadingInsight || insight) && (
+          <View style={[s.card, { marginBottom: 24, backgroundColor: C.a1 + '10', borderColor: C.neon + '33' }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <Text style={{ fontSize: 16 }}>✨</Text>
+              <Text style={{ fontSize: 10, fontWeight: '700', color: C.neon, letterSpacing: 1 }}>ENTRY INSIGHT</Text>
+            </View>
+
+            {loadingInsight ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <ActivityIndicator size="small" color={C.neon} />
+                <Text style={{ fontSize: 13, color: C.muted }}>Generating deep analysis...</Text>
+              </View>
+            ) : (
+              <>
+                <Text style={{ fontSize: 14, color: C.text, lineHeight: 22, marginBottom: 12 }}>
+                  {insight?.summary}
+                </Text>
+                <View style={{ backgroundColor: C.void, borderRadius: 12, padding: 12, borderLeftWidth: 3, borderLeftColor: C.neon }}>
+                  <Text style={{ fontSize: 12, color: C.sub, lineHeight: 18, fontStyle: 'italic' }}>
+                    "{insight?.recommendation}"
+                  </Text>
+                </View>
+              </>
+            )}
+          </View>
+        )}
 
         {entry.sections?.map((sec: JournalSection) => (
           <View key={sec.id} style={s.sectionCard}>

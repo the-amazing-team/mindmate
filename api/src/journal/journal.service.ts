@@ -3,16 +3,18 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateJournalDto } from './dto/create-journal.dto';
 import { AiService } from '../ai/ai.service';
 import { ProcessJournalDto } from '../ai/dto/process-journal.dto';
+import { InsightsService } from '../insights/insights.service';
 
 @Injectable()
 export class JournalService {
   constructor(
     private prisma: PrismaService,
     private aiService: AiService,
+    private insightsService: InsightsService,
   ) {}
 
   async create(data: CreateJournalDto) {
-    return this.prisma.journalEntry.create({
+    const entry = await this.prisma.journalEntry.create({
       data: {
         user_id: data.userId,
         title: data.title,
@@ -31,6 +33,16 @@ export class JournalService {
         sections: true,
       },
     });
+
+    // Generate insight for the new entry
+    try {
+      await this.insightsService.generateForEntry(entry.id);
+    } catch (err) {
+      console.error('Failed to generate insight for new entry:', err);
+      // We don't want to fail the whole journal creation if insight generation fails
+    }
+
+    return entry;
   }
 
   async processJournal(data: ProcessJournalDto) {
