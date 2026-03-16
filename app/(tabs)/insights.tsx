@@ -2,9 +2,6 @@ import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator } from
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { C } from '@/constants/theme';
-import { useAuth }     from '@/hooks/use-auth';
-import { useJournal }  from '@/hooks/use-journal';
-import { useInsights } from '@/hooks/use-insights';
 
 const EMOTION_COLORS: Record<string, string> = {
   anxious: '#FB7185',  hopeful: '#A3E635',  frustrated: '#FB923C',
@@ -17,9 +14,20 @@ function emotionColor(e: string | null) {
 }
 
 export default function InsightsScreen() {
-  const { user }  = useAuth();
-  const { sections, loading: journalLoading } = useJournal(user?.id);
-  const { data, refreshSummary } = useInsights(user?.id, sections);
+  const user = null;
+  const sections: any[] = [];
+  const journalLoading = false;
+  const data = {
+    totalSections: 0,
+    avgScore: 0,
+    streak: 0,
+    weekEmotions: [] as any[],
+    topEmotions: [] as any[],
+    loading: false,
+    aiSummary: null,
+    recommendation: null,
+  };
+  const refreshSummary = () => {};
 
   const loading = journalLoading;
 

@@ -1,7 +1,10 @@
-import { Controller, Post, Body, BadRequestException, Logger } from '@nestjs/common';
+import { Controller, Post, Body, Logger } from '@nestjs/common';
 import { AiService } from './ai.service';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { PipelineDto } from './dto/pipeline.dto';
+import { ProcessJournalDto } from './dto/process-journal.dto';
+import { GenerateInsightsDto } from './dto/generate-insights.dto';
+import { ChatWithContextDto } from './dto/chat-with-context.dto';
+import { ScheduleCheckinDto } from './dto/schedule-checkin.dto';
 
 @ApiTags('AI')
 @Controller('ai')
@@ -10,25 +13,35 @@ export class AiController {
 
   constructor(private readonly aiService: AiService) {}
 
-  @Post('pipeline')
-  @ApiOperation({ summary: 'Run an AI pipeline' })
-  @ApiResponse({ status: 200, description: 'Pipeline executed successfully' })
-  @ApiResponse({ status: 400, description: 'Unknown pipeline' })
-  async runPipeline(@Body() body: PipelineDto): Promise<any> {
-    const { pipeline, payload } = body;
-    this.logger.log(`Running pipeline ${pipeline}`);
+  @Post('process-journal')
+  @ApiOperation({ summary: 'Process a journal section for emotions and reflections' })
+  @ApiResponse({ status: 200, description: 'Journal processed successfully' })
+  async processJournal(@Body() body: ProcessJournalDto): Promise<any> {
+    this.logger.log(`Processing journal content`);
+    return this.aiService.processJournal(body);
+  }
 
-    switch (pipeline) {
-      case 'A':
-        return this.aiService.processJournal(payload);
-      case 'B':
-        return this.aiService.generateInsights(payload);
-      case 'C':
-        return this.aiService.chatWithContext(payload);
-      case 'D':
-        return this.aiService.scheduleCheckin(payload);
-      default:
-        throw new BadRequestException('Unknown pipeline');
-    }
+  @Post('generate-insights')
+  @ApiOperation({ summary: 'Generate weekly insights and recommendations from context' })
+  @ApiResponse({ status: 200, description: 'Insights generated successfully' })
+  async generateInsights(@Body() body: GenerateInsightsDto): Promise<any> {
+    this.logger.log(`Generating insights from context`);
+    return this.aiService.generateInsights(body);
+  }
+
+  @Post('chat')
+  @ApiOperation({ summary: 'Chat with AI using provided context' })
+  @ApiResponse({ status: 200, description: 'Chat response generated' })
+  async chatWithContext(@Body() body: ChatWithContextDto): Promise<any> {
+    this.logger.log(`Chat request with context`);
+    return this.aiService.chatWithContext(body);
+  }
+
+  @Post('schedule-checkin')
+  @ApiOperation({ summary: 'Determine next AI check-in time from context' })
+  @ApiResponse({ status: 200, description: 'Check-in time calculated' })
+  async scheduleCheckin(@Body() body: ScheduleCheckinDto): Promise<any> {
+    this.logger.log(`Calculating check-in time`);
+    return this.aiService.scheduleCheckin(body);
   }
 }

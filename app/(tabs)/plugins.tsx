@@ -8,9 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Spacing, Radius } from '@/constants/theme';
 import { useRouter } from 'expo-router';
-import { usePlugins, Plugin } from '@/hooks/use-plugins';
-import { MindMateSDK } from '@/components/plugins/plugin-sdk';
-import { useAuth } from '@/hooks/use-auth';
+type Plugin = any;
 
 const { width } = Dimensions.get('window');
 
@@ -210,7 +208,7 @@ export default plugin;`}</Text>
         <Text style={sdkStyles.code}>{`await MindMateSDK.ui.showNotification("Hello World!");`}</Text>
         <TouchableOpacity 
           style={{ marginTop: 10, alignSelf: 'flex-start', backgroundColor: '#10B981', paddingHorizontal: 15, paddingVertical: 8, borderRadius: 8 }}
-          onPress={() => MindMateSDK.execute('MindMateSDK.ui.showNotification("SDK Simulation Successful! 🚀")')}
+          onPress={() => {}}
         >
           <Text style={{ color: 'white', fontWeight: 'bold' }}>▶ Run Code</Text>
         </TouchableOpacity>
@@ -281,7 +279,7 @@ const sdkStyles = StyleSheet.create({
 
 // ─── Plugin Card ─────────────────────────────────────────────────────────────
 
-function PluginCard({ plugin, onPress }: { plugin: Plugin & { isInstalled: boolean, tags: string[] }; onPress: () => void }) {
+function PluginCard({ plugin, onPress }: { plugin: any; onPress: () => void }) {
   const installAnim = useRef(new Animated.Value(1)).current;
 
   return (
@@ -329,7 +327,7 @@ function PluginCard({ plugin, onPress }: { plugin: Plugin & { isInstalled: boole
 
 // ─── Plugin Detail Modal ──────────────────────────────────────────────────────
 
-function PluginDetail({ plugin, onClose }: { plugin: (Plugin & { isInstalled: boolean }) | null; onClose: () => void }) {
+function PluginDetail({ plugin, onClose }: { plugin: any; onClose: () => void }) {
   if (!plugin) return null;
 
   return (
@@ -396,7 +394,7 @@ function PluginDetail({ plugin, onClose }: { plugin: (Plugin & { isInstalled: bo
 
             <TouchableOpacity
               style={detailStyles.installBtn}
-              onPress={() => !plugin.isInstalled && MindMateSDK.ui.showNotification("Installation initiated...")}
+              onPress={() => {}}
             >
               <LinearGradient
                 colors={plugin.isInstalled ? ['#6B7280', '#4B5563'] : ['#8B5CF6', '#6D28D9']}
@@ -493,8 +491,12 @@ const detailStyles = StyleSheet.create({
 
 export default function PluginsScreen() {
   const router = useRouter();
-  const { user } = useAuth();
-  const { plugins, installedIds, loading, installPlugin } = usePlugins();
+  const user = null;
+  const plugins: any[] = [];
+  const installedIds: any[] = [];
+  const loading = false;
+  const installPlugin = async (id: string) => {};
+  
   const [activeCategory, setActiveCategory] = useState('All');
   const [searchText, setSearchText] = useState('');
   const [selectedPlugin, setSelectedPlugin] = useState<Plugin | null>(null);

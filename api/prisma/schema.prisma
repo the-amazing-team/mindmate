@@ -26,6 +26,34 @@ model User {
   installations       Installation[]
   createdAt           DateTime         @default(now())
   updatedAt           DateTime         @updatedAt
+  journal_entries     JournalEntry[]
+}
+
+model JournalEntry {
+  id           String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id      String
+  user         User             @relation(fields: [user_id], references: [id])
+  title        String?
+  overall_mood String
+  sections     JournalSection[]
+  created_at   DateTime         @default(now())
+  updated_at   DateTime         @updatedAt
+
+  @@index([user_id])
+}
+
+model JournalSection {
+  id               String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  journal_entry_id String       @db.Uuid
+  journal_entry    JournalEntry @relation(fields: [journal_entry_id], references: [id], onDelete: Cascade)
+  content          String       @db.Text
+  section_order    Int
+  primary_emotion  String?
+  emotion_score    Float?
+  reflection_text  String?
+  created_at       DateTime     @default(now())
+
+  @@index([journal_entry_id])
 }
 
 model Plugin {

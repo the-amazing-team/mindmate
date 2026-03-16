@@ -8,6 +8,7 @@ import { PluginModule } from "./plugins/plugin.module";
 import { PrismaModule } from "./prisma/prisma.module";
 import { UsersModule } from "./users/users.module";
 import { VoiceModule } from "./voice/voice.module";
+import { JournalModule } from "./journal/journal.module";
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { VoiceModule } from "./voice/voice.module";
     UsersModule,
     MailModule,
     VoiceModule,
+    JournalModule,
     PluginModule,
   ],
   controllers: [AppController],

@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import * as Speech from 'expo-speech';
 import { Ionicons } from '@expo/vector-icons';
-import { useAudioSequence } from '@/hooks/use-audio-sequence';
 
 interface TTSComponentProps {
   text: string;
@@ -10,7 +9,8 @@ interface TTSComponentProps {
 
 export const TTSComponent: React.FC<TTSComponentProps> = ({ text }) => {
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const { playSequence, stopSequence } = useAudioSequence();
+  const playSequence = async (args: any) => {};
+  const stopSequence = () => {};
 
   const speak = async () => {
     if (!text) return;

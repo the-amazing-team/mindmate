@@ -1,5 +1,4 @@
 import { C } from '@/constants/theme';
-import { useAuth } from '@/hooks/use-auth';
 import { JournalEntry, JournalSection, useJournal } from '@/hooks/use-journal';
 import { useCallback, useState } from 'react';
 import {
@@ -51,8 +50,8 @@ function EmotionBadge({
   emotion,
   score,
 }: {
-  emotion: string | null;
-  score: number | null;
+  emotion: string | null | undefined;
+  score: number | null | undefined;
 }) {
   if (!emotion) return null;
 
@@ -192,46 +191,80 @@ function DetailView({
 function WriteView({
   onBack,
   onSave,
+  createEntry,
+  processSection,
 }: {
   onBack: () => void;
   onSave: () => void;
+  createEntry: (data: any) => Promise<{ data: any; error: any }>;
+  processSection: (content: string) => Promise<{ data: any; error: any }>;
 }) {
-  const { user } = useAuth();
-  const { save, saving } = useJournal(user?.id);
-
   const [title, setTitle] = useState('');
-  const [sections, setSections] = useState<string[]>(['']);
+  const [sections, setSections] = useState<
+    Array<{
+      content: string;
+      reflection?: string;
+      primary_emotion?: string;
+      emotion_score?: number;
+    }>
+  >([{ content: '' }]);
   const [mood, setMood] = useState<number | null>(null);
-  const [selTags, setSelTags] = useState<string[]>([]);
   const [done, setDone] = useState(false);
   const [saveErr, setSaveErr] = useState('');
+  const [processingIdx, setProcessingIdx] = useState<number | null>(null);
 
   function updateSection(idx: number, val: string) {
-    setSections((prev) => prev.map((s, i) => (i === idx ? val : s)));
+    setSections((prev) =>
+      prev.map((s, i) => (i === idx ? { ...s, content: val } : s))
+    );
   }
 
-  function addSection() {
-    setSections((prev) => [...prev, '']);
-  }
+  async function addSection() {
+    const lastIdx = sections.length - 1;
+    const lastSection = sections[lastIdx];
 
-  const toggleTag = useCallback(
-    (t: string) =>
-      setSelTags((p) =>
-        p.includes(t) ? p.filter((x) => x !== t) : [...p, t]
-      ),
-    []
-  );
+    if (!lastSection.content.trim()) return;
+
+    setProcessingIdx(lastIdx);
+    const { data, error } = await processSection(lastSection.content);
+    setProcessingIdx(null);
+
+    if (error) {
+      setSaveErr(error);
+      return;
+    }
+
+    // Update last section with AI data and add a new one
+    setSections((prev) => {
+      const next = [...prev];
+      next[lastIdx] = {
+        ...next[lastIdx],
+        reflection: data.reflection_text,
+        primary_emotion: data.primary_emotion,
+        emotion_score: data.emotion_score,
+      };
+      next.push({ content: '' });
+      return next;
+    });
+  }
 
   async function handleSave() {
-    const filled = sections.filter((s) => s.trim().length > 0);
+    const filled = sections.filter((s) => s.content.trim().length > 0);
     if (!filled.length) return;
 
     setSaveErr('');
 
-    const { error } = await save({
+    const { error } = await createEntry({
       title: title.trim() || null,
       overall_mood: mood !== null ? `${mood}` : null,
-      content_blocks: filled,
+      sections: filled.map((s, idx) => ({
+        content: s.content,
+        section_order: idx,
+        // The backend might not support these yet in create, but good to have if it does
+        primary_emotion: s.primary_emotion,
+        emotion_score: s.emotion_score,
+        reflection_text: s.reflection,
+      })),
     });
 
     if (error) {
@@ -317,24 +350,56 @@ function WriteView({
       <View style={{ marginBottom: 16 }}>
         <Text style={s.label}>JOURNAL CONTENT</Text>
 
-        {sections.map((sec, i) => (
-          <View key={i} style={{ marginBottom: 10 }}>
-            <TextInput
-              style={s.textarea}
-              value={sec}
-              onChangeText={(val) => updateSection(i, val)}
-              placeholder="Write freely..."
-              placeholderTextColor={C.muted}
-              multiline
-            />
-          </View>
-        ))}
+        {sections.map((sec, i) => {
+          const isProcessing = processingIdx === i;
+          const isLast = i === sections.length - 1;
 
-        <Pressable onPress={addSection} style={s.addSection}>
-          <Text style={{ fontSize: 12, color: C.neon }}>
-            + Add another section
-          </Text>
-        </Pressable>
+          return (
+            <View key={i} style={{ marginBottom: 16 }}>
+              <TextInput
+                style={[
+                  s.textarea,
+                  !isLast && { backgroundColor: C.void, borderColor: 'transparent' },
+                ]}
+                value={sec.content}
+                onChangeText={(val) => updateSection(i, val)}
+                placeholder="Write freely..."
+                placeholderTextColor={C.muted}
+                multiline
+                editable={isLast && !isProcessing}
+              />
+
+              {isProcessing && (
+                <View style={[s.reflectionBox, { flexDirection: 'row', alignItems: 'center', gap: 10 }]}>
+                  <ActivityIndicator size="small" color={C.neon} />
+                  <Text style={{ color: C.sub, fontSize: 13 }}>Processing insights...</Text>
+                </View>
+              )}
+
+              {sec.reflection && !isProcessing && (
+                <View style={s.reflectionBox}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                    <Text style={{ fontSize: 9, fontWeight: '700', color: C.neon, letterSpacing: 1 }}>AI REFLECTION</Text>
+                    {sec.primary_emotion && (
+                      <EmotionBadge emotion={sec.primary_emotion} score={sec.emotion_score} />
+                    )}
+                  </View>
+                  <Text style={{ fontSize: 13, color: C.sub, lineHeight: 20, fontStyle: 'italic' }}>
+                    "{sec.reflection}"
+                  </Text>
+                </View>
+              )}
+            </View>
+          );
+        })}
+
+        {processingIdx === null && (
+          <Pressable onPress={addSection} style={s.addSection}>
+            <Text style={{ fontSize: 12, color: C.neon }}>
+              + Add another section
+            </Text>
+          </Pressable>
+        )}
       </View>
 
       {saveErr ? (
@@ -343,14 +408,10 @@ function WriteView({
 
       <Pressable
         onPress={handleSave}
-        disabled={saving}
-        style={[s.saveBtn, saving && { opacity: 0.7 }]}
+        disabled={processingIdx !== null}
+        style={[s.saveBtn, processingIdx !== null && { opacity: 0.5 }]}
       >
-        {saving ? (
-          <ActivityIndicator color={C.text} />
-        ) : (
-          <Text style={s.saveBtnText}>Save & Get AI Insights ✦</Text>
-        )}
+        <Text style={s.saveBtnText}>Save Entry</Text>
       </Pressable>
     </ScrollView>
   );
@@ -359,15 +420,14 @@ function WriteView({
 /* ───────────────── Main Screen ───────────────── */
 
 export default function JournalScreen() {
-  const { user } = useAuth();
-  const { entries, loading, error } = useJournal(user?.id);
+  const { entries, loading, createEntry, refresh, processSection } = useJournal();
 
   const [view, setView] = useState<ScreenView>('list');
   const [selected, setSelected] = useState<JournalEntry | null>(null);
 
   if (view === 'detail' && selected) {
-    const live: JournalEntry =
-      entries.find((e) => e.id === selected.id) ?? selected;
+    // Refresh detailed view with live data if needed
+    const live = entries.find((e: JournalEntry) => e.id === selected.id) || selected;
 
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: C.void }}>
@@ -387,7 +447,12 @@ export default function JournalScreen() {
       <SafeAreaView style={{ flex: 1, backgroundColor: C.void }}>
         <WriteView
           onBack={() => setView('list')}
-          onSave={() => setView('list')}
+          onSave={() => {
+            setView('list');
+            refresh();
+          }}
+          createEntry={createEntry}
+          processSection={processSection}
         />
       </SafeAreaView>
     );
@@ -410,9 +475,9 @@ export default function JournalScreen() {
       {loading ? (
         <ActivityIndicator style={{ marginTop: 40 }} color={C.neon} />
       ) : (
-        <FlatList<JournalEntry>
+        <FlatList
           data={entries}
-          keyExtractor={(e) => e.id}
+          keyExtractor={(e: JournalEntry) => e.id}
           contentContainerStyle={{ padding: 16 }}
           renderItem={({ item, index }) => {
             const firstSection = item.sections?.[0];

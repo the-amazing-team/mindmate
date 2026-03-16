@@ -12,10 +12,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInLeft, FadeInRight } from 'react-native-reanimated';
 import { C } from '@/constants/theme';
-import { useAuth }      from '@/hooks/use-auth';
-import { useChat, ChatMessage } from '@/hooks/use-chat';
-import { useJournal }   from '@/hooks/use-journal';
-import { useScheduler } from '@/hooks/use-scheduler';
 
 const QUICK_PROMPTS = [
   "What patterns do you see in my emotions?",
@@ -45,13 +41,16 @@ function ContextBadge({ ctx }: ContextBadgeProps) {
 }
 
 export default function ChatScreen() {
-  const { user, profile } = useAuth();
-  const { sections }      = useJournal(user?.id);
-  const { messages, loading, error, send, reset } = useChat(
-    user?.id,
-    profile?.name ?? 'there',
-  );
-  const { runScheduler } = useScheduler(user?.id);
+  const user = null;
+  const profile = null;
+  const sections = [];
+  const messages = [];
+  const loading = false;
+  const error = null;
+  const send = async (text: string) => {};
+  const reset = () => {};
+  const runScheduler = (args: any) => {};
+
   const [input, setInput] = useState('');
   const listRef = useRef<FlatList>(null);
 
@@ -59,13 +58,6 @@ export default function ChatScreen() {
     setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 80);
 
   useEffect(() => { scrollToEnd(); }, [messages.length]);
-
-  // Run Pipeline D scheduler when chat has had some exchanges
-  useEffect(() => {
-    if (messages.length >= 6 && user?.id) {
-      runScheduler({ messages, sections });
-    }
-  }, [messages.length, user?.id, runScheduler, messages, sections]);
 
   async function handleSend(text: string = input) {
     const t = text.trim();
