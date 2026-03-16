@@ -146,30 +146,21 @@ function DetailView({
         </Text>
 
         {/* Entry Insight Card */}
-        {(loadingInsight || insight) && (
+        {insight && (
           <View style={[s.card, { marginBottom: 24, backgroundColor: C.a1 + '10', borderColor: C.neon + '33' }]}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
               <Text style={{ fontSize: 16 }}>✨</Text>
               <Text style={{ fontSize: 10, fontWeight: '700', color: C.neon, letterSpacing: 1 }}>ENTRY INSIGHT</Text>
             </View>
 
-            {loadingInsight ? (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                <ActivityIndicator size="small" color={C.neon} />
-                <Text style={{ fontSize: 13, color: C.muted }}>Generating deep analysis...</Text>
-              </View>
-            ) : (
-              <>
-                <Text style={{ fontSize: 14, color: C.text, lineHeight: 22, marginBottom: 12 }}>
-                  {insight?.summary}
-                </Text>
-                <View style={{ backgroundColor: C.void, borderRadius: 12, padding: 12, borderLeftWidth: 3, borderLeftColor: C.neon }}>
-                  <Text style={{ fontSize: 12, color: C.sub, lineHeight: 18, fontStyle: 'italic' }}>
-                    "{insight?.recommendation}"
-                  </Text>
-                </View>
-              </>
-            )}
+            <Text style={{ fontSize: 14, color: C.text, lineHeight: 22, marginBottom: 12 }}>
+              {insight.summary}
+            </Text>
+            <View style={{ backgroundColor: C.void, borderRadius: 12, padding: 12, borderLeftWidth: 3, borderLeftColor: C.neon }}>
+              <Text style={{ fontSize: 12, color: C.sub, lineHeight: 18, fontStyle: 'italic' }}>
+                "{insight.recommendation}"
+              </Text>
+            </View>
           </View>
         )}
 
@@ -191,20 +182,20 @@ function DetailView({
               score={sec.emotion_score}
             />
 
-            <View style={s.reflectionBox}>
-              <Text
-                style={{
-                  fontSize: 9,
-                  fontWeight: '700',
-                  color: C.neon,
-                  letterSpacing: 1,
-                  marginBottom: 6,
-                }}
-              >
-                AI REFLECTION
-              </Text>
+            {sec.reflection_text && (
+              <View style={s.reflectionBox}>
+                <Text
+                  style={{
+                    fontSize: 9,
+                    fontWeight: '700',
+                    color: C.neon,
+                    letterSpacing: 1,
+                    marginBottom: 6,
+                  }}
+                >
+                  AI REFLECTION
+                </Text>
 
-              {sec.reflection_text ? (
                 <Text
                   style={{
                     fontSize: 13,
@@ -215,15 +206,8 @@ function DetailView({
                 >
                   "{sec.reflection_text}"
                 </Text>
-              ) : (
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                  <ActivityIndicator size="small" color={C.neon} />
-                  <Text style={{ fontSize: 12, color: C.muted }}>
-                    Generating reflection...
-                  </Text>
-                </View>
-              )}
-            </View>
+              </View>
+            )}
           </View>
         ))}
       </Animated.View>
