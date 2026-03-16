@@ -1,121 +1,83 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
-import { callPipeline } from './use-supabase';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useState, useCallback, useEffect } from 'react';
+import { chatService, ChatMessage } from '@/services/chat.service';
+import { insightService } from '@/services/insight.service';
+import { authService } from '@/services/auth.service';
 
-export interface ChatMessage {
-  id: string;
-  role: 'user' | 'ai' | 'assistant';
-  text: string;
-  context: any[];
-}
-
-export function useChat(userId: string | undefined, profileName: string | undefined) {
-  const greeting = `Hey ${profileName || 'there'} 👋 I've read your journal and I'm here to help you reflect. What's on your mind?`;
-
+export function useChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error,   setError]   = useState('');
+  const [error, setError] = useState<string | null>(null);
 
-  // Multi-turn history — sent to the Edge Function on every message
-  const historyRef = useRef<{ role: string; content: string }[]>([]);
-
-  const STORAGE_KEY = `mindmate_chat_${userId}`;
-
-  // Load messages from storage
+  // Load history on mount
   useEffect(() => {
-    if (!userId) return;
+    async function init() {
+      const history = await chatService.loadHistory();
+      setMessages(history);
+    }
+    init();
+  }, []);
 
-    const loadMessages = async () => {
-      try {
-        const saved = await AsyncStorage.getItem(STORAGE_KEY);
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          setMessages(parsed);
-          
-          // Sync historyRef
-          historyRef.current = parsed
-            .filter((m: ChatMessage) => m.id !== '0')
-            .map((m: ChatMessage) => ({
-              role: m.role === 'ai' ? 'assistant' : m.role,
-              content: m.text
-            }));
-        } else {
-          setMessages([{ id: '0', role: 'ai', text: greeting, context: [] }] as ChatMessage[]);
-        }
-      } catch (e) {
-        console.warn('Failed to load chat history', e);
-        setMessages([{ id: '0', role: 'ai', text: greeting, context: [] }] as ChatMessage[]);
-      }
-    };
-
-    loadMessages();
-  }, [userId, greeting]);
-
-  // Save messages to storage
-  useEffect(() => {
-    if (!userId || messages.length === 0) return;
-    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(messages))
-      .catch(e => console.warn('Failed to save chat history', e));
-  }, [messages, userId]);
-
-  const send = useCallback(async (question: string) => {
-    if (!question.trim() || !userId || loading) return;
-
-    const userMsg: ChatMessage = { id: String(Date.now()), role: 'user', text: question, context: [] };
-    setMessages(prev => [...prev, userMsg]);
-    setLoading(true);
-    setError('');
-
-    // Append user turn to history before sending
-    historyRef.current.push({ role: 'user', content: question });
-
-    try {
-      // Pipeline C: vector_search → context_retrieval → ai_response
-      let result;
-      try {
-        result = await callPipeline('C', {
-          user_id:      userId,
-          question,
-          history:      historyRef.current.slice(-12),  // last 12 turns (6 exchanges)
-          profile_name: profileName,
-        });
-      } catch (pipelineErr) {
-        console.warn('Pipeline C failed, using mock response:', pipelineErr);
-        // Mock Response Fallback
-        result = {
-          answer: `I hear you. Based on what you've shared about your experiences, it sounds like you're navigating some complex feelings. (Note: This is a fallback response as the AI pipeline is still being configured).`,
-          context: [
-            { date: 'Today', emotion: 'Mental Health', similarity: 85 },
-            { date: 'Yesterday', emotion: 'Reflection', similarity: 72 }
-          ]
-        };
-      }
-
-      const aiMsg: ChatMessage = {
-        id:      String(Date.now() + 1),
-        role:    'ai',
-        text:    result.answer ?? 'Something went wrong. Please try again.',
-        context: result.context ?? [],  // [{date, emotion, similarity}] — shown as badge
-      };
-
-      setMessages(prev => [...prev, aiMsg]);
-
-      // Append AI turn to history
-      historyRef.current.push({ role: 'assistant', content: aiMsg.text });
-
-    } catch (err: any) {
-      setError(err?.message ?? 'Could not reach AI. Check your Supabase config.');
+  const send = useCallback(async (text: string) => {
+    const user = await authService.getCurrentUser();
+    if (!user) {
+      setError('User not authenticated');
+      return;
     }
 
-    setLoading(false);
-  }, [userId, profileName, loading]);
+    const userMsg: ChatMessage = {
+      id: Date.now().toString(),
+      role: 'user',
+      text,
+      timestamp: new Date().toISOString(),
+    };
 
-  const reset = useCallback(() => {
-    historyRef.current = [];
-    const initial: ChatMessage[] = [{ id: '0', role: 'ai', text: greeting, context: [] }];
-    setMessages(initial);
-    if (userId) AsyncStorage.removeItem(STORAGE_KEY);
-  }, [greeting, userId]);
+    const newMessages = [...messages, userMsg];
+    setMessages(newMessages);
+    setLoading(true);
+    setError(null);
 
-  return { messages, loading, error, send, reset };
+    try {
+      // Fetch insights for context
+      const insights = await insightService.getUserInsights(user.id);
+      const context = insights
+        .map(i => `Insight (${new Date(i.created_at).toLocaleDateString()}): ${i.summary}. Recommendation: ${i.recommendation}`)
+        .join('\n\n');
+
+      const historyForAI = messages.map(m => ({
+        role: m.role === 'ai' ? 'assistant' : 'user',
+        content: m.text,
+      }));
+
+      const response = await chatService.chat(text, context, historyForAI);
+
+      const aiMsg: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: 'ai',
+        text: response.answer,
+        timestamp: new Date().toISOString(),
+      };
+
+      const finalMessages = [...newMessages, aiMsg];
+      setMessages(finalMessages);
+      await chatService.saveHistory(finalMessages);
+    } catch (err: any) {
+      setError(err.message || 'Failed to get response from AI');
+    } finally {
+      setLoading(false);
+    }
+  }, [messages]);
+
+  const reset = useCallback(async () => {
+    await chatService.clearHistory();
+    setMessages([]);
+    setError(null);
+  }, []);
+
+  return {
+    messages,
+    loading,
+    error,
+    send,
+    reset,
+  };
 }

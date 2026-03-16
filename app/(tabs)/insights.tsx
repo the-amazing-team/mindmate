@@ -2,9 +2,6 @@ import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator } from
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { C } from '@/constants/theme';
-import { useAuth }     from '@/hooks/use-auth';
-import { useJournal }  from '@/hooks/use-journal';
-import { useInsights } from '@/hooks/use-insights';
 
 const EMOTION_COLORS: Record<string, string> = {
   anxious: '#FB7185',  hopeful: '#A3E635',  frustrated: '#FB923C',
@@ -16,12 +13,14 @@ function emotionColor(e: string | null) {
   return EMOTION_COLORS[e?.toLowerCase() ?? ''] ?? C.neon;
 }
 
-export default function InsightsScreen() {
-  const { user }  = useAuth();
-  const { sections, loading: journalLoading } = useJournal(user?.id);
-  const { data, refreshSummary } = useInsights(user?.id, sections);
+import { useInsights } from '@/hooks/use-insights';
+import { Insight } from '@/services/insight.service';
 
-  const loading = journalLoading;
+export default function InsightsScreen() {
+  const { insights, loading, refresh } = useInsights();
+
+  const totalInsights = insights.length;
+  const latestInsight = insights[0];
 
   return (
     <SafeAreaView style={s.safe}>
@@ -30,119 +29,71 @@ export default function InsightsScreen() {
           <Text style={s.title}>Insights ◈</Text>
           <Text style={{ fontSize: 11, color: C.muted }}>AI pattern recognition</Text>
         </View>
-        <Pressable onPress={refreshSummary} style={s.refreshBtn}>
+        <Pressable onPress={refresh} style={s.refreshBtn}>
           <Text style={{ fontSize: 11, color: C.neon }}>↻ Refresh</Text>
         </Pressable>
       </View>
 
-      {loading ? (
+      {loading && insights.length === 0 ? (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <ActivityIndicator color={C.neon} />
-          <Text style={{ fontSize: 12, color: C.muted, marginTop: 10 }}>Loading your data...</Text>
+          <Text style={{ fontSize: 12, color: C.muted, marginTop: 10 }}>Loading your insights...</Text>
         </View>
-      ) : data.totalSections === 0 ? (
+      ) : totalInsights === 0 ? (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 }}>
           <Text style={{ fontSize: 40, marginBottom: 14 }}>📊</Text>
-          <Text style={{ fontSize: 16, fontWeight: '700', color: C.text, marginBottom: 8 }}>No data yet</Text>
+          <Text style={{ fontSize: 16, fontWeight: '700', color: C.text, marginBottom: 8 }}>No insights yet</Text>
           <Text style={{ fontSize: 13, color: C.sub, textAlign: 'center', lineHeight: 20 }}>
-            Write your first journal entry to see patterns and AI insights here.
+            Write journal entries to see AI-powered patterns and recommendations here.
           </Text>
         </View>
       ) : (
         <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
-
-          {/* KPIs */}
-          <Animated.View entering={FadeInDown.delay(40).springify()} style={s.kpiRow}>
-            {[
-              { label: 'Avg intensity', val: data.avgScore.toFixed(2), color: C.lime  },
-              { label: 'Streak',        val: `${data.streak}d`,        color: C.amber },
-              { label: 'Sections',      val: `${data.totalSections}`,  color: C.cyan  },
-            ].map((k, i) => (
-              <View key={i} style={s.kpiCard}>
-                <Text style={[s.kpiVal, { color: k.color }]}>{k.val}</Text>
-                <Text style={s.kpiLabel}>{k.label.toUpperCase()}</Text>
+          
+          {/* Stats Card */}
+          <Animated.View entering={FadeInDown.delay(40).springify()} style={s.card}>
+            <Text style={s.sectionLabel}>OVERVIEW</Text>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+              <View>
+                <Text style={{ color: C.text, fontSize: 24, fontWeight: '800' }}>{totalInsights}</Text>
+                <Text style={{ color: C.muted, fontSize: 10 }}>TOTAL INSIGHTS</Text>
               </View>
-            ))}
-          </Animated.View>
-
-          {/* 7-day emotion timeline */}
-          <Animated.View entering={FadeInDown.delay(80).springify()} style={s.card}>
-            <Text style={s.sectionLabel}>EMOTION TIMELINE — LAST 7 DAYS</Text>
-            <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 6, height: 60 }}>
-              {data.weekEmotions.map((e, i) => {
-                const h    = e.score != null ? Math.round(e.score * 48) + 10 : 5;
-                const col  = e.emotion ? emotionColor(e.emotion) : C.muted + '30';
-                const days = ['M','T','W','T','F','S','S'];
-                return (
-                  <View key={i} style={{ flex: 1, alignItems: 'center', gap: 4 }}>
-                    <View style={{ width: '100%', height: h, borderRadius: 4, backgroundColor: col + 'AA' }} />
-                    <Text style={{ fontSize: 9, color: i === 6 ? C.neon : C.muted }}>{days[i]}</Text>
-                  </View>
-                );
-              })}
+              <View style={{ alignItems: 'flex-end' }}>
+                 <Text style={{ color: C.neon, fontSize: 12, fontWeight: '700' }}>ACTIVE ANALYSIS</Text>
+                 <Text style={{ color: C.sub, fontSize: 10 }}>Updated just now</Text>
+              </View>
             </View>
           </Animated.View>
 
-          {/* Top emotions */}
-          {data.topEmotions.length > 0 && (
-            <Animated.View entering={FadeInDown.delay(120).springify()} style={s.card}>
-              <Text style={s.sectionLabel}>TOP EMOTIONS</Text>
-              {data.topEmotions.map((e, i) => (
-                <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 9,
-                  marginBottom: i < data.topEmotions.length - 1 ? 10 : 0 }}>
-                  <Text style={{ fontSize: 12, color: C.sub, flex: 1, textTransform: 'capitalize' }}>
-                    {e.emotion}
-                  </Text>
-                  <View style={{ width: 100, height: 5, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.05)' }}>
-                    <View style={{ width: `${e.pct}%`, height: '100%', borderRadius: 3,
-                      backgroundColor: emotionColor(e.emotion) }} />
-                  </View>
-                  <Text style={{ fontSize: 10, color: emotionColor(e.emotion),
-                    fontWeight: '700', width: 16, textAlign: 'right' }}>{e.count}</Text>
-                </View>
-              ))}
-            </Animated.View>
-          )}
-
-          {/* AI Summary */}
-          <Animated.View entering={FadeInDown.delay(160).springify()}
-            style={[s.card, { backgroundColor: C.a1 + '10', borderColor: C.neon + '25' }]}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-              <Text style={{ fontSize: 16 }}>🤖</Text>
-              <Text style={{ fontSize: 10, fontWeight: '700', color: C.neon, letterSpacing: 1 }}>
-                AI WEEKLY SUMMARY
-              </Text>
-            </View>
-
-            {data.loading ? (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                <ActivityIndicator size="small" color={C.neon} />
-                <Text style={{ fontSize: 13, color: C.muted }}>Analysing your patterns...</Text>
-              </View>
-            ) : data.aiSummary ? (
-              <>
-                <Text style={{ fontSize: 13, color: C.text, lineHeight: 22, marginBottom: 12 }}>
-                  {data.aiSummary}
+          {/* Insights List */}
+          <Text style={[s.sectionLabel, { marginLeft: 4, marginBottom: 10 }]}>COLLECTIVE JOURNEYS</Text>
+          {insights.map((insight: Insight, idx) => (
+            <Animated.View 
+              key={insight.id} 
+              entering={FadeInDown.delay(100 + idx * 50).springify()}
+              style={[s.card, idx === 0 && { borderColor: C.neon + '44', backgroundColor: C.lift + 'AA' }]}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                <Text style={{ fontSize: 14 }}>{idx === 0 ? '✨' : '◈'}</Text>
+                <Text style={{ fontSize: 9, fontWeight: '700', color: idx === 0 ? C.neon : C.sub, letterSpacing: 1 }}>
+                  {new Date(insight.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase()}
                 </Text>
-                {data.recommendation && (
-                  <View style={{ backgroundColor: C.lime + '18', borderRadius: 10, padding: 10,
-                    borderWidth: 1, borderColor: C.lime + '33' }}>
-                    <Text style={{ fontSize: 10, fontWeight: '700', color: C.lime, marginBottom: 4 }}>
-                      SUGGESTION
-                    </Text>
-                    <Text style={{ fontSize: 12, color: C.sub, lineHeight: 18 }}>
-                      {data.recommendation}
-                    </Text>
-                  </View>
-                )}
-              </>
-            ) : (
-              <Text style={{ fontSize: 12, color: C.muted }}>
-                Configure your Supabase + Anthropic API keys to enable AI summaries.
-              </Text>
-            )}
-          </Animated.View>
+              </View>
 
+              <Text style={{ fontSize: 14, color: C.text, lineHeight: 22, marginBottom: 12 }}>
+                {insight.summary}
+              </Text>
+
+              <View style={{ backgroundColor: C.a1 + '15', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: C.neon + '22' }}>
+                <Text style={{ fontSize: 9, fontWeight: '700', color: C.neon, marginBottom: 6, letterSpacing: 0.5 }}>
+                  RECOMMENDATION
+                </Text>
+                <Text style={{ fontSize: 13, color: C.sub, lineHeight: 20 }}>
+                  {insight.recommendation}
+                </Text>
+              </View>
+            </Animated.View>
+          ))}
         </ScrollView>
       )}
     </SafeAreaView>

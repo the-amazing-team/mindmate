@@ -3,6 +3,21 @@ import { supabase } from './supabase'; // Keep for other features if needed (sto
 
 export const authService = {
   _email: null as string | null,
+  _user: null as any | null,
+
+  async getCurrentUser() {
+    if (this._user) return this._user;
+    if (!this._email) return null;
+
+    try {
+      const response = await apiClient.get(`/users/${this._email}`);
+      this._user = response.data;
+      return this._user;
+    } catch (error) {
+      console.error('Failed to get current user', error);
+      return null;
+    }
+  },
 
   async signUp(email: string, password: string, name: string) {
     try {
@@ -15,6 +30,7 @@ export const authService = {
       });
 
       this._email = email;
+      this._user = response.data;
       // Trigger OTP
       await this.sendOtp(email);
 
@@ -29,6 +45,7 @@ export const authService = {
     try {
       const response = await apiClient.post('/users/login', { email, password });
       this._email = email;
+      this._user = response.data;
       return { backendUser: response.data };
     } catch (error: any) {
       console.error('Login error', error);
@@ -37,7 +54,7 @@ export const authService = {
   },
 
   getEmail() {
-    return this._email;
+    return this._email || this._user?.email;
   },
 
   async signOut() {

@@ -1,9 +1,15 @@
-import { AuthShell, Aurora, Btn, Card, Divider, Input, Spinner, Stars, Toast } from "@/components/auth";
+import {
+  AuthShell,
+  Btn,
+  Card,
+  Input,
+  Spinner,
+  Toast
+} from "@/components/auth";
 import { MindMateColors as C } from "@/constants/theme";
-import { useState, useEffect } from "react";
-import { useRouter } from "expo-router";
-import { supabase } from "@/lib/supabase";
 import { authService } from "@/services/auth.service";
+import { useRouter } from "expo-router";
+import { useEffect, useState } from "react";
 
 /* ════════════════════════════════════════════════
    AUTH LANDING & LOGIN SCREEN
@@ -11,7 +17,7 @@ import { authService } from "@/services/auth.service";
 export default function AuthLandingScreen() {
   const router = useRouter();
   const [showLogin, setShowLogin] = useState(false);
-  
+
   // Login States
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -44,15 +50,17 @@ export default function AuthLandingScreen() {
     }
     setLoading(true);
     setErrors({});
-    
+
     try {
       const data = await authService.login(email, password);
       setToast({ msg: "Success! Signing in...", type: "ok" });
-      
+
+      console.log(data);
+
       if (data.backendUser && data.backendUser.onboarding_complete === false) {
-        router.replace('/(auth)/onboarding');
+        router.replace("/(auth)/onboarding");
       } else {
-        router.replace('/(tabs)');
+        router.replace("/(tabs)");
       }
     } catch (error: any) {
       setToast({ msg: error.message || "Login failed", type: "err" });
@@ -75,8 +83,15 @@ export default function AuthLandingScreen() {
       )}
 
       {!showLogin ? (
-        <div style={{ animation: "fadeUp .6s .2s both", display: "flex", flexDirection: "column", gap: 16 }}>
-          <Btn full onClick={() => router.push('/(auth)/signup')}>
+        <div
+          style={{
+            animation: "fadeUp .6s .2s both",
+            display: "flex",
+            flexDirection: "column",
+            gap: 16,
+          }}
+        >
+          <Btn full onClick={() => router.push("/(auth)/signup")}>
             Get Started
           </Btn>
           <button
@@ -120,7 +135,6 @@ export default function AuthLandingScreen() {
               Sign in to continue your journey
             </p>
 
-
             <div
               style={{
                 display: "flex",
@@ -155,7 +169,7 @@ export default function AuthLandingScreen() {
 
             <div style={{ textAlign: "right", marginTop: 8, marginBottom: 20 }}>
               <button
-                onClick={() => router.push('/(auth)/forgot-password' as any)}
+                onClick={() => router.push("/(auth)/forgot-password" as any)}
                 style={{
                   background: "none",
                   border: "none",
@@ -198,7 +212,7 @@ export default function AuthLandingScreen() {
             >
               Don't have an account?{" "}
               <button
-                onClick={() => router.push('/(auth)/signup')}
+                onClick={() => router.push("/(auth)/signup")}
                 style={{
                   background: "none",
                   border: "none",
@@ -260,7 +274,7 @@ export function ForgotPasswordScreen({ onGoLogin }: { onGoLogin: () => void }) {
     }
     setLoading(true);
     setError("");
-    
+
     // UI Mock
     setTimeout(() => {
       setLoading(false);
@@ -460,7 +474,7 @@ export function ResetPasswordScreen({ onDone }: { onDone: () => void }) {
     }
     setLoading(true);
     setErrors({});
-    
+
     // UI Mock
     setTimeout(() => {
       setLoading(false);
