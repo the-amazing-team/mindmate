@@ -12,6 +12,26 @@ export const unstable_settings = {
 };
 
 function InitialLayout() {
+  const segments = useSegments();
+  const router = useRouter();
+
+  useEffect(() => {
+    import("@/services/auth.service").then(({ authService }) => {
+      authService.getSession().then((session) => {
+        const inAuthGroup = segments[0] === "(auth)";
+        const atRoot = segments.length === 0 || (segments.length === 1 && segments[0] === "index");
+
+        if (!session && !inAuthGroup) {
+          // Redirect unauthenticated users to the auth screen
+          router.replace("/(auth)");
+        } else if (session && (inAuthGroup || atRoot)) {
+          // Redirect authenticated users away from auth screens to the main app
+          router.replace("/(tabs)");
+        }
+      });
+    });
+  }, [segments]);
+
   return (
     <Stack
       screenOptions={{

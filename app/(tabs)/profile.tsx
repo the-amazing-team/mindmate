@@ -1,12 +1,12 @@
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
-import React from 'react';
+import { useRouter, useFocusEffect } from 'expo-router';
+import React, { useCallback } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { authService } from '@/services/auth.service';
-import { supabase } from '@/services/supabase';
+import { apiClient } from '@/services/api-client';
 
 const SETTINGS_GROUPS = [
   {
@@ -22,15 +22,28 @@ export default function ProfileScreen() {
 
   const router = useRouter();
   const [user, setUser] = React.useState<any>(null);
+  const [metrics, setMetrics] = React.useState({ streak: 0, totalJournals: 0, totalCheckIns: 0 });
+  const [loading, setLoading] = React.useState(true);
 
-  React.useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) {
-        // Fetch full profile from backend if needed
-        setUser(data.user);
+  useFocusEffect(
+    useCallback(() => {
+      async function loadData() {
+        setLoading(true);
+        const currentUser = await authService.getCurrentUser(true);
+        if (currentUser) {
+          setUser(currentUser);
+          try {
+            const res = await apiClient.get(`/users/metrics/${currentUser.id}`);
+            setMetrics(res.data);
+          } catch (e) {
+            console.error("Metrics load failed", e);
+          }
+        }
+        setLoading(false);
       }
-    });
-  }, []);
+      loadData();
+    }, [])
+  );
 
   const handleLogout = async () => {
     try {
@@ -50,28 +63,37 @@ export default function ProfileScreen() {
             colors={['#8B5CF6', '#6D28D9']}
             style={styles.avatarGradient}
           >
-            <Text style={styles.avatarText}>{user?.email?.substring(0, 2).toUpperCase() || 'JD'}</Text>
+            <Text style={styles.avatarText}>
+              {user?.name ? user.name.split(' ').filter(Boolean).map((n: string) => n[0]).join('').toUpperCase().substring(0, 2) : (user?.email?.substring(0, 2).toUpperCase() || 'MM')}
+            </Text>
           </LinearGradient>
           <View style={styles.headerInfo}>
-            <Text style={styles.userName}>{user?.user_metadata?.full_name || 'User'}</Text>
+            <Text style={styles.userName}>{user?.name || 'User'}</Text>
             <Text style={styles.userEmail}>{user?.email || 'jane.doe@example.com'}</Text>
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>MindMate Member</Text>
+            <View style={styles.badgeContainer}>
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>PRO MEMBER</Text>
+              </View>
+              {user?.personality_type && (
+                <View style={[styles.badge, { marginLeft: 8, backgroundColor: 'rgba(16, 185, 129, 0.15)', borderColor: 'rgba(16, 185, 129, 0.3)' }]}>
+                  <Text style={[styles.badgeText, { color: '#10B981' }]}>{user.personality_type}</Text>
+                </View>
+              )}
             </View>
           </View>
         </View>
 
         <View style={styles.statsContainer}>
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>12</Text>
+            <Text style={styles.statValue}>{metrics.streak}</Text>
             <Text style={styles.statLabel}>Day Streak</Text>
           </View>
           <View style={[styles.statItem, styles.statBorder]}>
-            <Text style={styles.statValue}>24</Text>
+            <Text style={styles.statValue}>{metrics.totalJournals}</Text>
             <Text style={styles.statLabel}>Journals</Text>
           </View>
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>8</Text>
+            <Text style={styles.statValue}>{metrics.totalCheckIns}</Text>
             <Text style={styles.statLabel}>Check-ins</Text>
           </View>
         </View>
@@ -94,8 +116,9 @@ export default function ProfileScreen() {
                     } else if (item.id === 'call-agent') {
                       router.push('/call-agent' as any);
                     } else if (item.id === 'profile') {
-                      // We can add a simple state or message for now
-                      alert(`${item.label} coming soon!`);
+                      router.push('/edit-profile' as any);
+                    } else if (item.id === 'notifications') {
+                      router.push('/notifications' as any);
                     } else {
                       alert(`${item.label} feature is coming soon to MindMate Pro.`);
                     }
@@ -174,6 +197,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.dark.textSecondary,
     marginBottom: 8,
+  },
+  badgeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   badge: {
     backgroundColor: 'rgba(139, 92, 246, 0.15)',

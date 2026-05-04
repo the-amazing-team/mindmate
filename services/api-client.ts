@@ -1,6 +1,7 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 
-const API_URL = 'http://localhost:3000'; // Update with your actual API URL
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000'; // Dynamic API URL
 
 export const apiClient = axios.create({
   baseURL: API_URL,
@@ -9,12 +10,14 @@ export const apiClient = axios.create({
   },
 });
 
-// You can add interceptors here later if needed (e.g., for JWT tokens)
 apiClient.interceptors.request.use(async (config) => {
-  // If you want to include the Supabase session token in every request:
-  // const { data: { session } } = await supabase.auth.getSession();
-  // if (session?.access_token) {
-  //   config.headers.Authorization = `Bearer ${session.access_token}`;
-  // }
+  try {
+    const token = await AsyncStorage.getItem('auth_token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  } catch (error) {
+    // ignore
+  }
   return config;
 });

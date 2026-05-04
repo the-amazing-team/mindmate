@@ -4,12 +4,16 @@ import {
   Card,
   Input,
   Spinner,
-  Toast
+  Toast,
+  GoogleBtn,
 } from "@/components/auth";
 import { MindMateColors as C } from "@/constants/theme";
 import { authService } from "@/services/auth.service";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
+import * as WebBrowser from "expo-web-browser";
+import * as Google from "expo-auth-session/providers/google";
+import { Platform } from "react-native";
 
 /* ════════════════════════════════════════════════
    AUTH LANDING & LOGIN SCREEN
@@ -21,18 +25,37 @@ export default function AuthLandingScreen() {
   // Login States
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [toast, setToast] = useState<{
     msg: string;
     type: "ok" | "err" | "warn" | "info";
   } | null>(null);
 
-  // Check session on mount
+  // Google OAuth
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID_ANDROID,
+    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID_IOS,
+    webClientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID_WEB || "dummy-web-id",
+  });
+
   useEffect(() => {
-    // For custom auth, we might check local storage for a token/user
-    // For now, let's just stay on the login screen
+    if (Platform.OS !== "web") {
+      WebBrowser.warmUpAsync();
+      return () => {
+        WebBrowser.coolDownAsync();
+      };
+    }
   }, []);
+
+  useEffect(() => {
+    if (response?.type === "success") {
+      const { id_token } = response.params;
+      handleGoogleAuth(id_token);
+    }
+  }, [response]);
 
   const validate = () => {
     const e: Record<string, string> = {};
@@ -69,7 +92,29 @@ export default function AuthLandingScreen() {
   };
 
   const handleGoogle = async () => {
-    setToast({ msg: "Google login is currently disabled", type: "info" });
+    if (!request) {
+      setToast({ msg: "Google login not available", type: "err" });
+      return;
+    }
+    await promptAsync({ showInRecents: true });
+  };
+
+  const handleGoogleAuth = async (idToken: string) => {
+    setLoading(true);
+    setErrors({});
+    try {
+      const data = await authService.loginWithGoogle(idToken);
+      setToast({ msg: "Success! Signing in...", type: "ok" });
+
+      if (data.backendUser && data.backendUser.onboarding_complete === false) {
+        router.replace("/(auth)/onboarding");
+      } else {
+        router.replace("/(tabs)");
+      }
+    } catch (error: any) {
+      setToast({ msg: error.message || "Google login failed", type: "err" });
+      setLoading(false);
+    }
   };
 
   return (
@@ -162,29 +207,16 @@ export default function AuthLandingScreen() {
                 placeholder="••••••••"
                 error={errors.password}
                 icon="🔒"
+                show={showPassword}
+                onToggleShow={() => setShowPassword(prev => !prev)}
                 autoComplete="current-password"
                 required
-              />
-            </div>
+               />
+             </div>
 
-            <div style={{ textAlign: "right", marginTop: 8, marginBottom: 20 }}>
-              <button
-                onClick={() => router.push("/(auth)/forgot-password" as any)}
-                style={{
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  color: C.neon,
-                  fontSize: 12,
-                  fontFamily: "'Nunito',sans-serif",
-                  fontWeight: 600,
-                }}
-              >
-                Forgot password?
-              </button>
-            </div>
+             <GoogleBtn onClick={handleGoogle} disabled={loading || !request} />
 
-            <Btn full onClick={handleSubmit} disabled={loading}>
+             <Btn full onClick={handleSubmit} disabled={loading}>
               {loading ? (
                 <span
                   style={{
@@ -463,6 +495,20 @@ export function ResetPasswordScreen({ onDone }: { onDone: () => void }) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  useEffect(() => {
+    if (confirm && password !== confirm) {
+      setErrors(prev => ({ ...prev, confirm: "Passwords do not match" }));
+    } else if (confirm && password === confirm) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.confirm;
+        return newErrors;
+      });
+    }
+  }, [password, confirm]);
 
   const handleSubmit = async () => {
     const e: Record<string, string> = {};
@@ -562,26 +608,30 @@ export function ResetPasswordScreen({ onDone }: { onDone: () => void }) {
               Choose a strong password for your account
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              <Input
-                label="New Password"
-                type="password"
-                value={password}
-                onChange={(e: any) => setPassword(e.target.value)}
-                placeholder="Min 8 characters"
-                error={errors.password}
-                icon="🔒"
-                autoComplete="new-password"
-              />
-              <Input
-                label="Confirm Password"
-                type="password"
-                value={confirm}
-                onChange={(e: any) => setConfirm(e.target.value)}
-                placeholder="Re-enter password"
-                error={errors.confirm}
-                icon="🔐"
-                autoComplete="new-password"
-              />
+               <Input
+                 label="New Password"
+                 type="password"
+                 value={password}
+                 onChange={(e: any) => setPassword(e.target.value)}
+                 placeholder="Min 8 characters"
+                 error={errors.password}
+                 icon="🔒"
+                 show={showPassword}
+                 onToggleShow={() => setShowPassword(prev => !prev)}
+                 autoComplete="new-password"
+               />
+               <Input
+                 label="Confirm Password"
+                 type="password"
+                 value={confirm}
+                 onChange={(e: any) => setConfirm(e.target.value)}
+                 placeholder="Re-enter password"
+                 error={errors.confirm}
+                 icon="🔐"
+                 show={showConfirmPassword}
+                 onToggleShow={() => setShowConfirmPassword(prev => !prev)}
+                 autoComplete="new-password"
+               />
             </div>
             <div style={{ marginTop: 20 }}>
               <Btn

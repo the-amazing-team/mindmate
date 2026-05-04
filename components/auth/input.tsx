@@ -19,7 +19,7 @@ export const Input = ({ label, type = "text", value, onChange, placeholder, erro
             color: C.text, fontSize: 14, outline: "none", transition: "all .2s", boxSizing: "border-box",
             ...style
           }} />
-        {isPass && <button type="button" onClick={onToggleShow} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: C.sub, fontSize: 15, padding: 0 }}>{show ? "🙈" : "👁"}</button>}
+        {isPass && <button type="button" onClick={onToggleShow} onMouseDown={(e) => e.preventDefault()} aria-label={show ? "Hide password" : "Show password"} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: C.sub, fontSize: 15, padding: 0 }}>{show ? "🙈" : "👁"}</button>}
       </div>
       {error && <p style={{ margin: "4px 0 0", fontSize: 11, color: C.rose, fontFamily: "'Nunito',sans-serif", animation: "fadeUp .2s both" }}>{error}</p>}
     </div>

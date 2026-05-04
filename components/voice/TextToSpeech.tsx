@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import * as Speech from 'expo-speech';
+import { Audio } from 'expo-av';
 import { Ionicons } from '@expo/vector-icons';
 
 interface TTSComponentProps {
@@ -8,16 +9,51 @@ interface TTSComponentProps {
 }
 
 export const TTSComponent: React.FC<TTSComponentProps> = ({ text }) => {
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const playSequence = async (args: any) => {};
-  const stopSequence = () => {};
+  const [sound, setSound] = useState<Audio.Sound | null>(null);
+
+  const playSequence = async (audioUrls: string[]) => {
+    try {
+      // Stop any existing sound
+      if (sound) {
+        await sound.unloadAsync();
+      }
+
+      console.log('Playing audio:', audioUrls[0]);
+      const { sound: newSound } = await Audio.Sound.createAsync(
+        { uri: audioUrls[0] },
+        { shouldPlay: true }
+      );
+      
+      setSound(newSound);
+      setIsSpeaking(true);
+
+      newSound.setOnPlaybackStatusUpdate((status) => {
+        if (status.isLoaded && status.didJustFinish) {
+          setIsSpeaking(false);
+          newSound.unloadAsync();
+        }
+      });
+    } catch (error) {
+      console.error('Error playing audio:', error);
+      setIsSpeaking(false);
+    }
+  };
+
+  const stopSequence = async () => {
+    if (sound) {
+      await sound.stopAsync();
+      await sound.unloadAsync();
+      setSound(null);
+    }
+    setIsSpeaking(false);
+  };
 
   const speak = async () => {
     if (!text) return;
     
     setIsSpeaking(true);
     try {
-      const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001';
+      const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
       
       // Call backend Kokoro TTS
       const response = await fetch(`${API_URL}/voice/tts`, {
@@ -53,15 +89,12 @@ export const TTSComponent: React.FC<TTSComponentProps> = ({ text }) => {
         onDone: () => setIsSpeaking(false),
         onError: () => setIsSpeaking(false),
       });
-    } finally {
-      setIsSpeaking(false);
     }
   };
 
   const stop = () => {
     stopSequence();
     Speech.stop();
-    setIsSpeaking(false);
   };
 
   return (

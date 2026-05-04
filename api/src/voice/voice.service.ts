@@ -1,4 +1,6 @@
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import Groq from 'groq-sdk';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
 import * as path from 'path';
@@ -8,15 +10,21 @@ const execFilePromise = promisify(execFile);
 
 @Injectable()
 export class VoiceService {
-  // On Windows, 'python' or 'py' is common. On Linux/Mac, 'python3' is standard.
   private readonly pythonPath = process.platform === 'win32' ? 'python' : 'python3';
   private readonly voiceScriptsPath = path.join(process.cwd(), 'voice');
-  private readonly useMockVoice = true; // Set to true to bypass Python scripts for development
+  private readonly useMockVoice = false; // ENABLE REAL VOICE
+  private readonly groq: Groq;
+
+  constructor(private configService: ConfigService) {
+    this.groq = new Groq({
+      apiKey: this.configService.get<string>('GROQ_API_KEY'),
+    });
+  }
 
 
   async textToSpeech(text: string, voice = 'af_heart'): Promise<string> {
     if (this.useMockVoice) {
-      console.log('VoiceService: Mock mode active. Returning dummy_tts.wav');
+      console.log(`VoiceService: Mock mode active. Requested TTS for: "${text.substring(0, 30)}..." with voice: ${voice}`);
       return 'dummy_tts.wav';
     }
 
@@ -48,32 +56,20 @@ export class VoiceService {
   }
 
   async speechToText(audioFilePath: string): Promise<string> {
-    if (this.useMockVoice) {
-      console.log('VoiceService: Mock mode active. Returning dummy transcription.');
-      const dummyData = JSON.parse(fs.readFileSync(path.join(this.voiceScriptsPath, 'dummy_voice_data.json'), 'utf8'));
-      const phrases = dummyData.stt_dummy_phrases;
-      return phrases[Math.floor(Math.random() * phrases.length)];
-    }
-
-    const scriptPath = path.join(this.voiceScriptsPath, 'whisper_stt.py');
-
-    if (!fs.existsSync(scriptPath)) {
-      throw new Error(`STT script not found at ${scriptPath}`);
-    }
-    
     try {
-      console.log(`Executing STT: ${this.pythonPath} ${scriptPath} ${audioFilePath}`);
-      const { stdout, stderr } = await execFilePromise(this.pythonPath, [scriptPath, audioFilePath]);
+      console.log(`VoiceService: Transcribing file with Groq... ${audioFilePath}`);
       
-      if (stderr && !stdout) {
-        console.warn('STT Python stderr:', stderr);
-      }
+      const transcription = await this.groq.audio.transcriptions.create({
+        file: fs.createReadStream(audioFilePath),
+        model: 'whisper-large-v3-turbo',
+        response_format: 'json',
+      });
 
-      const match = stdout.match(/Transcription:\s*(.*)/i);
-      return match ? match[1].trim() : stdout.trim();
+      console.log('VoiceService: Transcription complete.');
+      return transcription.text;
     } catch (error) {
-      console.error('STT Execution Error:', error);
-      throw new Error(`Failed to transcribe audio with Python. Ensure ${this.pythonPath} and Whisper are installed. Error: ${error.message}`);
+      console.error('Groq STT Error:', error);
+      throw new Error(`Failed to transcribe audio with Groq. Error: ${error.message}`);
     }
   }
 }

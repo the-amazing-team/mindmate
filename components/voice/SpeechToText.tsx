@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Platform } from 'react-native';
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,16 +10,22 @@ interface STTComponentProps {
 }
 
 export const STTComponent: React.FC<STTComponentProps> = ({ onTranscriptionComplete, isProcessing }) => {
-  const [recording, setRecording] = useState<Audio.Recording | null>(null);
+  const recordingRef = React.useRef<Audio.Recording | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [permissionResponse, requestPermission] = Audio.usePermissions();
 
+  const lastStartTimeRef = React.useRef<number>(0);
+
   async function startRecording() {
     try {
+      if (recordingRef.current || isRecording) return;
+
       if (permissionResponse?.status !== 'granted') {
         console.log('Requesting permission..');
-        await requestPermission();
+        const response = await requestPermission();
+        if (response.status !== 'granted') return;
       }
+
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: true,
         playsInSilentModeIOS: true,
@@ -29,20 +35,35 @@ export const STTComponent: React.FC<STTComponentProps> = ({ onTranscriptionCompl
       const { recording } = await Audio.Recording.createAsync(
         Audio.RecordingOptionsPresets.HIGH_QUALITY
       );
-      setRecording(recording);
+      
+      recordingRef.current = recording;
+      lastStartTimeRef.current = Date.now();
       setIsRecording(true);
       console.log('Recording started');
     } catch (err) {
       console.error('Failed to start recording', err);
+      recordingRef.current = null;
+      setIsRecording(false);
     }
   }
 
   async function stopRecording() {
-    console.log('Stopping recording..');
-    setRecording(null);
+    if (!recordingRef.current) return;
+    
+    const duration = Date.now() - lastStartTimeRef.current;
+    console.log(`Stopping recording.. Duration: ${duration}ms`);
+    
+    const recording = recordingRef.current;
+    recordingRef.current = null;
     setIsRecording(false);
     
-    if (recording) {
+    if (duration < 500) {
+      console.log('Recording too short, discarding..');
+      try { await recording.stopAndUnloadAsync(); } catch (e) {}
+      return;
+    }
+    
+    try {
       await recording.stopAndUnloadAsync();
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: false,
@@ -51,10 +72,10 @@ export const STTComponent: React.FC<STTComponentProps> = ({ onTranscriptionCompl
       console.log('Recording stopped and stored at', uri);
       
       if (uri) {
-        // Here we would normally send the file to the Whisper API
-        // For now, we'll simulate a transcription
         handleTranscription(uri);
       }
+    } catch (err) {
+      console.error('Failed to stop recording', err);
     }
   }
 
@@ -64,22 +85,26 @@ export const STTComponent: React.FC<STTComponentProps> = ({ onTranscriptionCompl
     try {
       // Create form data for the file upload
       const formData = new FormData();
-      // @ts-ignore - React Native FormData expects an object with uri, name, type
-      formData.append('audio', {
-        uri: uri,
-        name: 'speech.m4a',
-        type: 'audio/m4a',
-      });
+      
+      if (Platform.OS === 'web') {
+        const response = await fetch(uri);
+        const blob = await response.blob();
+        formData.append('audio', blob, 'speech.m4a');
+      } else {
+        // @ts-ignore - React Native FormData expects an object with uri, name, type
+        formData.append('audio', {
+          uri: uri,
+          name: 'speech.m4a',
+          type: 'audio/m4a',
+        });
+      }
 
       // Point this to your actual backend URL (e.g. your local IP or production domain)
-      const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001';
+      const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
       
       const response = await fetch(`${API_URL}/voice/stt`, {
         method: 'POST',
         body: formData,
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
       });
 
       const result = await response.json();

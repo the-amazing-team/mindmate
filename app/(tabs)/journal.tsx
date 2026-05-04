@@ -241,6 +241,7 @@ function WriteView({
   const [done, setDone] = useState(false);
   const [saveErr, setSaveErr] = useState('');
   const [processingIdx, setProcessingIdx] = useState<number | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   function updateSection(idx: number, val: string) {
     setSections((prev) =>
@@ -278,9 +279,11 @@ function WriteView({
   }
 
   async function handleSave() {
+    if (isSaving) return;
     const filled = sections.filter((s) => s.content.trim().length > 0);
     if (!filled.length) return;
 
+    setIsSaving(true);
     setSaveErr('');
 
     const { error } = await createEntry({
@@ -298,6 +301,7 @@ function WriteView({
 
     if (error) {
       setSaveErr(error);
+      setIsSaving(false);
       return;
     }
 
@@ -437,10 +441,10 @@ function WriteView({
 
       <Pressable
         onPress={handleSave}
-        disabled={processingIdx !== null}
-        style={[s.saveBtn, processingIdx !== null && { opacity: 0.5 }]}
+        disabled={processingIdx !== null || isSaving}
+        style={[s.saveBtn, (processingIdx !== null || isSaving) && { opacity: 0.5 }]}
       >
-        <Text style={s.saveBtnText}>Save Entry</Text>
+        <Text style={s.saveBtnText}>{isSaving ? 'Saving...' : 'Save Entry'}</Text>
       </Pressable>
     </ScrollView>
   );

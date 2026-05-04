@@ -16,4 +16,19 @@ export class UpdateProfileDto {
 
   @ApiProperty({ example: '08:00' })
   reminders: string;
+
+  @ApiProperty({ example: 'John Doe', required: false })
+  name?: string;
+
+  @ApiProperty({ example: true, required: false })
+  notifications_enabled?: boolean;
+
+  @ApiProperty({ example: true, required: false })
+  reminders_enabled?: boolean;
+
+  @ApiProperty({ example: true, required: false })
+  weekly_insights_enabled?: boolean;
+
+  @ApiProperty({ example: false, required: false })
+  marketing_emails_enabled?: boolean;
 }

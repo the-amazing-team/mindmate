@@ -21,6 +21,10 @@ model User {
   personality_type    PersonalityType?
   goals               String[]         @default([])
   reminders           String?
+  notifications_enabled    Boolean          @default(true)
+  reminders_enabled        Boolean          @default(true)
+  weekly_insights_enabled  Boolean          @default(true)
+  marketing_emails_enabled Boolean          @default(false)
   onboarding_complete Boolean          @default(false)
   is_verified         Boolean          @default(false)
   installations       Installation[]
@@ -28,6 +32,18 @@ model User {
   updatedAt           DateTime         @updatedAt
   journal_entries     JournalEntry[]
   insights            Insight[]
+  check_ins           CheckIn[]
+}
+
+model CheckIn {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id    String
+  user       User     @relation(fields: [user_id], references: [id])
+  mood_score Int
+  note       String?
+  created_at DateTime @default(now())
+
+  @@index([user_id])
 }
 
 model JournalEntry {

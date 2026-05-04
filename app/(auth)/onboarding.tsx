@@ -27,18 +27,19 @@ export default function OnboardingScreen() {
     setLoading(true);
     try {
       const email = authService.getEmail();
-      if (email) {
-        await authService.completeOnboarding(email, {
-          ageGroup: data.age_range,
-          personality: data.personality,
-          goals: data.goals,
-          reminders: data.reminders,
-        });
-      }
+      if (!email) throw new Error('No user email found');
+
+      await authService.completeOnboarding(email, {
+        ageGroup: data.age_range,
+        personality: data.personality,
+        goals: data.goals,
+        reminders: data.reminders,
+      });
+
       router.replace('/(tabs)');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Onboarding finish error:', error);
-      router.replace('/(tabs)');
+      alert('Failed to save profile. Please try again.');
     } finally {
       setLoading(false);
     }

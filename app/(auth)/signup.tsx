@@ -4,7 +4,8 @@ import {
   Card,
   Input,
   Spinner,
-  Toast
+  Toast,
+  GoogleBtn,
 } from "@/components/auth";
 import { MindMateColors as C } from "@/constants/theme";
 import { authService } from "@/services/auth.service";
@@ -18,6 +19,8 @@ export default function SignupScreen() {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [agreed, setAgreed] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [emailChecking, setEmailChecking] = useState(false);
@@ -55,6 +58,18 @@ export default function SignupScreen() {
 
     return () => clearTimeout(timer);
   }, [email]);
+
+  useEffect(() => {
+    if (confirm && password !== confirm) {
+      setErrors(prev => ({ ...prev, confirm: "Passwords do not match" }));
+    } else if (confirm && password === confirm) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.confirm;
+        return newErrors;
+      });
+    }
+  }, [password, confirm]);
 
   const getStrength = (pw: string) => {
     let score = 0;
@@ -259,14 +274,15 @@ export default function SignupScreen() {
             fontFamily: "'Nunito',sans-serif",
           }}
         >
-          Start your mental wellness journey today
-        </p>
+           Start your mental wellness journey today
+         </p>
 
+         <GoogleBtn onClick={() => {}} disabled={true} />
 
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
+         <div
+           style={{
+             display: "flex",
+             flexDirection: "column",
             gap: 14,
             marginTop: 18,
           }}
@@ -302,6 +318,8 @@ export default function SignupScreen() {
               placeholder="Min 8 characters"
               error={errors.password}
               icon="🔒"
+              show={showPassword}
+              onToggleShow={() => setShowPassword(p => !p)}
               autoComplete="new-password"
               required
             />
@@ -345,6 +363,8 @@ export default function SignupScreen() {
             placeholder="Re-enter password"
             error={errors.confirm}
             icon="🔐"
+            show={showConfirmPassword}
+            onToggleShow={() => setShowConfirmPassword(p => !p)}
             autoComplete="new-password"
             required
           />

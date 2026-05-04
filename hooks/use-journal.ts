@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   journalService, 
   JournalEntry, 
@@ -35,10 +35,17 @@ export function useJournal() {
     fetchEntries();
   }, [fetchEntries]);
 
+  const isSubmittingRef = React.useRef(false);
+
   const createEntry = async (data: Omit<CreateJournalData, 'userId'>) => {
+    if (isSubmittingRef.current) {
+      return { data: null, error: 'Submission in progress' };
+    }
+    
     const user = await authService.getCurrentUser();
     if (!user) throw new Error('User not authenticated');
 
+    isSubmittingRef.current = true;
     setSaving(true);
     try {
       const newEntry = await journalService.createEntry({ ...data, userId: user.id });
@@ -48,6 +55,7 @@ export function useJournal() {
       return { data: null, error: err.message || 'Failed to create journal entry' };
     } finally {
       setSaving(false);
+      isSubmittingRef.current = false;
     }
   };
 

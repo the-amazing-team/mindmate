@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Dimensions, ScrollView, Text, TouchableOpacity, View, Platform } from 'react-native';
+import { Dimensions, ScrollView, Text, TouchableOpacity, View, Platform, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 
 const { width } = Dimensions.get('window');
 
@@ -79,6 +80,16 @@ export default function PanicScreen() {
   const [groundStep, setGroundStep] = useState<number>(0);
   const [affirmIdx, setAffirmIdx] = useState<number>(0);
   const timerRef = useRef<any>(null);
+  const router = useRouter();
+
+  const handleCrisisCall = () => {
+    const number = Platform.OS === 'android' ? 'tel:988' : 'telprompt:988';
+    Linking.openURL(number).catch(err => console.error("Error opening dialer", err));
+  };
+
+  const handleAIChat = () => {
+    router.push({ pathname: '/chat' as any, params: { mode: 'panic' } });
+  };
 
   useEffect(() => {
     if (phase === "breathe") {
@@ -141,32 +152,41 @@ export default function PanicScreen() {
         </TouchableOpacity>
 
         <View style={{ gap: 12 }}>
-          {[
-            { icon: "🧘", title: "5-4-3-2-1 Grounding", sub: "Anchor to the present moment", color: C.cyan },
-            { icon: "💬", title: "Crisis Line", sub: "Talk to a real human · 24/7 free", color: C.amber },
-            { icon: "🤖", title: "Chat with MindMate AI", sub: "I'm here. Tell me what's happening.", color: C.neon },
-          ].map((a, i) => (
-            <GlassCard key={i} style={{ padding: 16, flexDirection: "row", alignItems: "center", gap: 16 }}
-              onPress={() => a.title.includes("Grounding") && setPhase("ground")}>
-              <View style={{
-                width: 44,
-                height: 44,
-                borderRadius: 14,
-                backgroundColor: a.color + "18",
-                borderWidth: 1,
-                borderColor: a.color + "33",
-                alignItems: "center",
-                justifyContent: "center"
-              }}>
-                <Text style={{ fontSize: 20 }}>{a.icon}</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 15, fontWeight: "700", color: a.color }}>{a.title}</Text>
-                <Text style={{ fontSize: 12, color: C.sub, marginTop: 2 }}>{a.sub}</Text>
-              </View>
-              <Text style={{ color: C.muted, fontSize: 18 }}>›</Text>
-            </GlassCard>
-          ))}
+          <GlassCard style={{ padding: 16, flexDirection: "row", alignItems: "center", gap: 16 }}
+            onPress={() => setPhase("ground")}>
+            <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: C.cyan + "18", borderWidth: 1, borderColor: C.cyan + "33", alignItems: "center", justifyContent: "center" }}>
+              <Text style={{ fontSize: 20 }}>🧘</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 15, fontWeight: "700", color: C.cyan }}>5-4-3-2-1 Grounding</Text>
+              <Text style={{ fontSize: 12, color: C.sub, marginTop: 2 }}>Anchor to the present moment</Text>
+            </View>
+            <Text style={{ color: C.muted, fontSize: 18 }}>›</Text>
+          </GlassCard>
+
+          <GlassCard style={{ padding: 16, flexDirection: "row", alignItems: "center", gap: 16 }}
+            onPress={handleCrisisCall}>
+            <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: C.amber + "18", borderWidth: 1, borderColor: C.amber + "33", alignItems: "center", justifyContent: "center" }}>
+              <Text style={{ fontSize: 20 }}>📞</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 15, fontWeight: "700", color: C.amber }}>Crisis Line</Text>
+              <Text style={{ fontSize: 12, color: C.sub, marginTop: 2 }}>Talk to a real human · 24/7 free</Text>
+            </View>
+            <Text style={{ color: C.muted, fontSize: 18 }}>›</Text>
+          </GlassCard>
+
+          <GlassCard style={{ padding: 16, flexDirection: "row", alignItems: "center", gap: 16 }}
+            onPress={handleAIChat}>
+            <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: C.neon + "18", borderWidth: 1, borderColor: C.neon + "33", alignItems: "center", justifyContent: "center" }}>
+              <Text style={{ fontSize: 20 }}>🤖</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 15, fontWeight: "700", color: C.neon }}>Chat with MindMate AI</Text>
+              <Text style={{ fontSize: 12, color: C.sub, marginTop: 2 }}>I'm here. Tell me what's happening.</Text>
+            </View>
+            <Text style={{ color: C.muted, fontSize: 18 }}>›</Text>
+          </GlassCard>
         </View>
       </ScrollView>
     </SafeAreaView>

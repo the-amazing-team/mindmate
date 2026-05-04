@@ -54,16 +54,21 @@ export class VoiceController {
   }))
   async speechToText(@UploadedFile() file: Express.Multer.File) {
     if (!file) {
+      console.error('STT: No file received');
       return { success: false, message: 'No file uploaded' };
     }
     
+    console.log(`STT: Received file ${file.originalname}, size: ${file.size} bytes, path: ${file.path}`);
+    
     try {
       const transcription = await this.voiceService.speechToText(file.path);
+      console.log(`STT: Transcription successful: "${transcription}"`);
       return { 
         success: true, 
         text: transcription 
       };
     } catch (error) {
+      console.error('STT Error:', error.message);
       return { success: false, message: error.message };
     }
   }

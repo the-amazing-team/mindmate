@@ -8,14 +8,15 @@ export function useChat() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const refresh = useCallback(async () => {
+    const history = await chatService.loadHistory();
+    setMessages(history);
+  }, []);
+
   // Load history on mount
   useEffect(() => {
-    async function init() {
-      const history = await chatService.loadHistory();
-      setMessages(history);
-    }
-    init();
-  }, []);
+    refresh();
+  }, [refresh]);
 
   const send = useCallback(async (text: string) => {
     const user = await authService.getCurrentUser();
@@ -79,5 +80,6 @@ export function useChat() {
     error,
     send,
     reset,
+    refresh,
   };
 }
