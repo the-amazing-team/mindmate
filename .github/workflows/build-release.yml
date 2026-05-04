@@ -4,11 +4,19 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      run_release:
+        description: 'Set to true to run build and release'
+        required: true
+        default: true
+        type: boolean
 
 jobs:
   build:
     name: Build Android APK
     runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.run_release == true) }}
 
     steps:
       - name: 🏗 Checkout Repo
@@ -59,7 +67,7 @@ jobs:
 
       - name: 🚀 Create GitHub Release
         uses: softprops/action-gh-release@v2
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
         with:
           tag_name: v${{ github.run_number }}
           name: Release v${{ github.run_number }}
