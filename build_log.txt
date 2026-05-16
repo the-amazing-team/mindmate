@@ -1,0 +1,37 @@
+
+> build
+> vite build
+
+vite v7.3.3 building client environment for production...
+transforming...
+✓ 2371 modules transformed.
+rendering chunks...
+✗ Build failed in 1.69s
+error during build:
+[tanstack-start-core:import-protection] [plugin tanstack-start-core:import-protection] 
+[import-protection] Import denied in client environment
+
+  Denied by file pattern: **/server/**
+  Importer: src/components/chapters/HomeChapter.tsx
+  Import: "src/server/mood"
+  Resolved: src/server/mood.ts
+
+  Trace:
+    1. src/router.tsx:3:27 (entry) (import "./routeTree.gen")
+    2. src/routeTree.gen.ts:6:43 (import "./routes/index")
+    3. src/routes/index.tsx (import "src/components/chapters/HomeChapter")
+    4. src/components/chapters/HomeChapter.tsx (import "src/server/mood")
+
+  Suggestions:
+    - Use createServerFn().handler(() => ...) to keep the logic on the server and call it from the client via an RPC bridge
+    - Use createServerOnlyFn(() => ...) to mark it as server-only (it will throw if accidentally called from the client)
+    - Use createIsomorphicFn().client(() => ...).server(() => ...) to provide separate client and server implementations
+    - Move the server-only import out of this file into a separate .server.ts module that is not imported by any client code
+
+    at getRollupError (file:///Users/punit007x/Desktop/Projects/soulscroll-dialogue-main/node_modules/rollup/dist/es/shared/parseAst.js:406:41)
+    at error (file:///Users/punit007x/Desktop/Projects/soulscroll-dialogue-main/node_modules/rollup/dist/es/shared/parseAst.js:402:42)
+    at Object.error (file:///Users/punit007x/Desktop/Projects/soulscroll-dialogue-main/node_modules/rollup/dist/es/shared/node-entry.js:22665:20)
+    at Object.generateBundle (file:///Users/punit007x/Desktop/Projects/soulscroll-dialogue-main/node_modules/@tanstack/start-plugin-core/dist/esm/vite/import-protection-plugin/plugin.js:868:51)
+    at Object.handler (file:///Users/punit007x/Desktop/Projects/soulscroll-dialogue-main/node_modules/vite/dist/node/chunks/config.js:33763:13)
+    at file:///Users/punit007x/Desktop/Projects/soulscroll-dialogue-main/node_modules/rollup/dist/es/shared/node-entry.js:22987:40
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)

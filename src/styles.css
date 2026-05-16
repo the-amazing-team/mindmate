@@ -1,0 +1,319 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * MindMate — Storybook design system.
+ * Warm parchment, deep ink, emotional auroras.
+ */
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-parchment: var(--parchment);
+  --color-parchment-deep: var(--parchment-deep);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-gold: var(--gold);
+  --color-rose: var(--rose);
+  --color-lavender: var(--lavender);
+  --color-sage: var(--sage);
+  --color-sky: var(--sky);
+  --color-moonlight: var(--moonlight);
+
+  --font-display: "Cormorant Garamond", "Playfair Display", Georgia, serif;
+  --font-hand: "Caveat", "Kalam", cursive;
+  --font-body: "Inter", system-ui, sans-serif;
+}
+
+:root {
+  --radius: 0.875rem;
+
+  /* Storybook night — opens in darkness, becomes parchment */
+  --background: oklch(0.18 0.03 280);
+  --foreground: oklch(0.96 0.02 80);
+
+  --parchment: oklch(0.94 0.035 80);
+  --parchment-deep: oklch(0.88 0.05 75);
+  --ink: oklch(0.25 0.04 50);
+  --ink-soft: oklch(0.42 0.05 55);
+
+  --gold: oklch(0.78 0.13 75);
+  --rose: oklch(0.78 0.1 25);
+  --lavender: oklch(0.75 0.09 295);
+  --sage: oklch(0.78 0.07 155);
+  --sky: oklch(0.78 0.08 230);
+  --moonlight: oklch(0.92 0.02 250);
+
+  --card: oklch(0.94 0.035 80);
+  --card-foreground: oklch(0.25 0.04 50);
+  --popover: oklch(0.94 0.035 80);
+  --popover-foreground: oklch(0.25 0.04 50);
+
+  --primary: oklch(0.55 0.13 30);
+  --primary-foreground: oklch(0.97 0.02 80);
+  --secondary: oklch(0.88 0.05 75);
+  --secondary-foreground: oklch(0.25 0.04 50);
+  --muted: oklch(0.88 0.04 75);
+  --muted-foreground: oklch(0.42 0.05 55);
+  --accent: oklch(0.78 0.13 75);
+  --accent-foreground: oklch(0.25 0.04 50);
+  --destructive: oklch(0.6 0.18 28);
+  --destructive-foreground: oklch(0.97 0.02 80);
+  --border: oklch(0.78 0.05 70 / 40%);
+  --input: oklch(0.78 0.05 70 / 30%);
+  --ring: oklch(0.78 0.13 75);
+
+  /* Gradients */
+  --gradient-aurora: linear-gradient(
+    135deg,
+    oklch(0.75 0.09 295 / 0.7),
+    oklch(0.78 0.08 230 / 0.6),
+    oklch(0.78 0.07 155 / 0.5)
+  );
+  --gradient-sunrise: linear-gradient(
+    160deg,
+    oklch(0.85 0.1 60),
+    oklch(0.82 0.11 35),
+    oklch(0.7 0.13 350)
+  );
+  --gradient-night: radial-gradient(
+    ellipse at center,
+    oklch(0.25 0.06 280) 0%,
+    oklch(0.12 0.04 270) 70%,
+    oklch(0.08 0.02 260) 100%
+  );
+  --gradient-parchment: linear-gradient(180deg, oklch(0.95 0.03 80) 0%, oklch(0.9 0.05 75) 100%);
+  --gradient-gold: linear-gradient(135deg, oklch(0.85 0.13 80), oklch(0.7 0.15 50));
+
+  /* Shadows */
+  --shadow-page:
+    0 30px 60px -20px oklch(0.1 0.05 50 / 0.5), 0 18px 36px -18px oklch(0.1 0.05 50 / 0.4);
+  --shadow-soft: 0 8px 24px -8px oklch(0.2 0.05 50 / 0.25);
+  --shadow-glow: 0 0 60px oklch(0.78 0.13 75 / 0.4);
+  --shadow-ink: inset 0 0 60px oklch(0.78 0.05 70 / 0.3);
+
+  --transition-page: 1.2s cubic-bezier(0.65, 0, 0.35, 1);
+  --transition-soft: 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  html,
+  body {
+    background: var(--gradient-night);
+    color: var(--color-foreground);
+    font-family: var(--font-body);
+    overflow-x: hidden;
+    min-height: 100vh;
+  }
+
+  body {
+    background-attachment: fixed;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+  }
+}
+
+/* Paper texture */
+.paper {
+  background:
+    radial-gradient(circle at 20% 10%, oklch(1 0 0 / 0.3) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, oklch(0.7 0.08 50 / 0.15) 0%, transparent 50%),
+    var(--gradient-parchment);
+  background-color: var(--parchment);
+  position: relative;
+}
+
+.paper::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    45deg,
+    oklch(0.5 0.05 50 / 0.02) 0,
+    oklch(0.5 0.05 50 / 0.02) 1px,
+    transparent 1px,
+    transparent 4px
+  );
+  mix-blend-mode: multiply;
+  border-radius: inherit;
+}
+
+.paper::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  box-shadow: var(--shadow-ink);
+  border-radius: inherit;
+}
+
+.handwritten {
+  font-family: var(--font-hand);
+  font-weight: 500;
+}
+
+.display {
+  font-family: var(--font-display);
+}
+
+.ink-text {
+  color: var(--ink);
+}
+
+/* Floating particles */
+@keyframes float-up {
+  0% {
+    transform: translateY(20px) translateX(0);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-120vh) translateX(var(--drift, 30px));
+    opacity: 0;
+  }
+}
+
+@keyframes drift {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(20px, -30px) scale(1.1);
+  }
+}
+
+@keyframes pulse-glow {
+  0%,
+  100% {
+    box-shadow:
+      0 0 40px var(--glow-color, oklch(0.78 0.13 75 / 0.4)),
+      0 0 80px var(--glow-color, oklch(0.78 0.13 75 / 0.2));
+    transform: scale(1);
+  }
+  50% {
+    box-shadow:
+      0 0 60px var(--glow-color, oklch(0.78 0.13 75 / 0.6)),
+      0 0 120px var(--glow-color, oklch(0.78 0.13 75 / 0.3));
+    transform: scale(1.03);
+  }
+}
+
+@keyframes ink-spread {
+  0% {
+    clip-path: circle(0% at 0% 50%);
+  }
+  100% {
+    clip-path: circle(150% at 0% 50%);
+  }
+}
+
+@keyframes gentle-sway {
+  0%,
+  100% {
+    transform: rotate(-1deg);
+  }
+  50% {
+    transform: rotate(1deg);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes letter-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-float-up {
+  animation: float-up linear infinite;
+}
+.animate-drift {
+  animation: drift 8s ease-in-out infinite;
+}
+.animate-pulse-glow {
+  animation: pulse-glow 4s ease-in-out infinite;
+}
+.animate-sway {
+  animation: gentle-sway 6s ease-in-out infinite;
+}
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent, oklch(1 0 0 / 0.3), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+.glass {
+  background: oklch(0.95 0.03 80 / 0.55);
+  backdrop-filter: blur(20px) saturate(140%);
+  border: 1px solid oklch(1 0 0 / 0.4);
+}
+
+.ink-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--ink-soft), transparent);
+  opacity: 0.4;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
