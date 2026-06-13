@@ -63,13 +63,13 @@ export function FocusHourglass() {
             <p className="handwritten text-ink-soft text-base">time for your spirit to settle —</p>
           </div>
         </div>
-        
+
         {/* Music toggle */}
         <div className="flex items-center gap-2">
-           <audio 
+          <audio
             ref={audioRef}
-            src="https://assets.mixkit.co/music/preview/mixkit-lo-fi-night-vibes-924.mp3" 
-            loop 
+            src="https://assets.mixkit.co/music/preview/mixkit-lo-fi-night-vibes-924.mp3"
+            loop
           />
           <button
             onClick={() => setMusicPlaying(!musicPlaying)}
@@ -82,7 +82,11 @@ export function FocusHourglass() {
             onClick={() => setMuted(!muted)}
             className="p-2 rounded-full glass hover:scale-110 transition-transform"
           >
-            {muted ? <VolumeX className="w-5 h-5 text-ink-soft" /> : <Volume2 className="w-5 h-5 text-gold" />}
+            {muted ? (
+              <VolumeX className="w-5 h-5 text-ink-soft" />
+            ) : (
+              <Volume2 className="w-5 h-5 text-gold" />
+            )}
           </button>
         </div>
       </div>
@@ -113,14 +117,17 @@ export function FocusHourglass() {
       <div className="relative flex flex-col items-center justify-center py-10">
         {/* Animated Hourglass Background */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-5">
-           <motion.div 
+          <motion.div
             animate={{ rotate: isActive ? [0, 180] : 0 }}
             transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
             className="w-48 h-48 border-4 border-ink rounded-full flex flex-col overflow-hidden"
-           >
-              <div className="flex-1 bg-ink w-full" style={{ height: `${(timeLeft / MODES[mode].time) * 100}%` }} />
-              <div className="flex-1 w-full" />
-           </motion.div>
+          >
+            <div
+              className="flex-1 bg-ink w-full"
+              style={{ height: `${(timeLeft / MODES[mode].time) * 100}%` }}
+            />
+            <div className="flex-1 w-full" />
+          </motion.div>
         </div>
 
         <motion.div
@@ -131,7 +138,7 @@ export function FocusHourglass() {
         >
           {formatTime(timeLeft)}
         </motion.div>
-        
+
         <p className="handwritten text-ink-soft/60 text-lg mt-2 italic">
           {isActive ? "the sand is flowing…" : "resting at the narrow neck"}
         </p>
@@ -147,27 +154,29 @@ export function FocusHourglass() {
         >
           <RotateCcw className="w-6 h-6" />
         </motion.button>
-
         <motion.button
           onClick={() => setIsActive(!isActive)}
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
           className="w-20 h-20 rounded-full flex items-center justify-center text-white"
-          style={{ 
+          style={{
             background: isActive ? "oklch(0.5 0.05 50)" : "var(--gradient-gold)",
-            boxShadow: isActive ? "none" : "0 8px 30px oklch(0.78 0.13 75 / 0.4)"
+            boxShadow: isActive ? "none" : "0 8px 30px oklch(0.78 0.13 75 / 0.4)",
           }}
         >
-          {isActive ? <Pause className="w-8 h-8" fill="currentColor" /> : <Play className="w-8 h-8 translate-x-0.5" fill="currentColor" />}
+          {isActive ? (
+            <Pause className="w-8 h-8" fill="currentColor" />
+          ) : (
+            <Play className="w-8 h-8 translate-x-0.5" fill="currentColor" />
+          )}
         </motion.button>
-
         <div className="w-14" /> {/* Spacer for symmetry */}
       </div>
 
       {/* Bottom hint */}
       <AnimatePresence>
         {musicPlaying && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}

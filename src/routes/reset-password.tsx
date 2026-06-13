@@ -36,7 +36,7 @@ function ResetPasswordPage() {
   return (
     <main className="relative min-h-screen overflow-hidden flex items-center justify-center p-6">
       <MoodSky mood="calm" />
-      
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

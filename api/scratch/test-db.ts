@@ -1,19 +1,19 @@
-import { PrismaClient, PersonalityType } from '@prisma/client';
+import { PrismaClient, PersonalityType } from "@prisma/client";
 
 async function main() {
   const prisma = new PrismaClient();
   try {
-    console.log('--- Database Connection Test ---');
-    
+    console.log("--- Database Connection Test ---");
+
     // Find any user
     const user = await prisma.user.findFirst();
     if (!user) {
-      console.log('No users found in database.');
+      console.log("No users found in database.");
       return;
     }
 
-    console.log('Found user:', user.email);
-    console.log('Current profile data:');
+    console.log("Found user:", user.email);
+    console.log("Current profile data:");
     console.log({
       name: user.name,
       age_group: user.age_group,
@@ -26,19 +26,21 @@ async function main() {
     });
 
     // Test update (optional, but good for verification)
-    console.log('\n--- Testing Update ---');
+    console.log("\n--- Testing Update ---");
     const updatedUser = await prisma.user.update({
       where: { email: user.email },
       data: {
         marketing_emails_enabled: !user.marketing_emails_enabled, // Toggle it
-      }
+      },
     });
 
-    console.log('Successfully toggled marketing_emails_enabled to:', updatedUser.marketing_emails_enabled);
-    console.log('--- Test Completed Successfully ---');
-    
+    console.log(
+      "Successfully toggled marketing_emails_enabled to:",
+      updatedUser.marketing_emails_enabled,
+    );
+    console.log("--- Test Completed Successfully ---");
   } catch (e) {
-    console.error('Test Failed with Error:', e);
+    console.error("Test Failed with Error:", e);
   } finally {
     await prisma.$disconnect();
   }
