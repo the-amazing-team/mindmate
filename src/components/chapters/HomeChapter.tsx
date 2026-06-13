@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, TrendingUp } from "lucide-react";
+import { Sparkles, TrendingUp, Heart } from "lucide-react";
 import { EmotionalOrb } from "@/components/storybook/EmotionalOrb";
 import { moodPalette, useStorybook, type Mood } from "@/lib/storybook-context";
+import { MBTI_TYPES } from "@/components/auth/PersonalityTestFlow";
 import { getMoodHistory } from "@/services/mood";
 import { getJournalEntries } from "@/services/journal";
 
@@ -116,6 +117,39 @@ export function HomeChapter() {
           Each page of this book breathes with you. The orb listens. The pages remember. Below are
           today's small offerings —
         </p>
+
+        {profile.mbti_personality && MBTI_TYPES[profile.mbti_personality] && (
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            whileHover={{ y: -3, scale: 1.01 }}
+            className="p-6 rounded-2xl relative overflow-hidden text-white flex flex-col justify-between"
+            style={{
+              background: MBTI_TYPES[profile.mbti_personality].gradient,
+              boxShadow: `0 12px 30px -10px ${MBTI_TYPES[profile.mbti_personality].color}60`,
+            }}
+          >
+            <div className="absolute top-3 right-3 opacity-20">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div className="space-y-1">
+              <span className="text-[10px] uppercase tracking-widest text-white/70 font-semibold flex items-center gap-1">
+                <Heart className="w-3 h-3" /> Your Personality Signature
+              </span>
+              <div className="flex items-baseline gap-2 pt-1">
+                <h3 className="display text-3xl font-bold tracking-tight text-white">
+                  {profile.mbti_personality}
+                </h3>
+                <span className="handwritten text-lg text-white/90 italic">
+                  — the {MBTI_TYPES[profile.mbti_personality].title}
+                </span>
+              </div>
+              <p className="text-sm text-white/85 leading-relaxed pt-2">
+                {MBTI_TYPES[profile.mbti_personality].description}
+              </p>
+            </div>
+          </motion.div>
+        )}
 
         <motion.button
           onClick={() => setChapter("insights")}

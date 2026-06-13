@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Save, LogOut, Trash2, BookOpen, MessageCircle, Sparkles } from "lucide-react";
+import { Save, LogOut, Trash2, BookOpen, MessageCircle, Sparkles, RefreshCw } from "lucide-react";
 import { moodPalette, useStorybook, type Mood } from "@/lib/storybook-context";
 import { useAuth } from "@/lib/auth-context";
 import { supabase, isDemoMode } from "@/lib/supabase";
+import { MBTI_TYPES } from "@/components/auth/PersonalityTestFlow";
 
 const moods: Mood[] = ["calm", "joy", "hopeful", "melancholy", "anxious"];
 const AFFIRMATIONS = [
@@ -15,7 +16,8 @@ const AFFIRMATIONS = [
 ];
 
 export function ProfileChapter() {
-  const { profile, updateProfile, memories, triggerCounts, clearMemories } = useStorybook();
+  const { profile, updateProfile, memories, triggerCounts, clearMemories, exitBook } =
+    useStorybook();
   const { user, signOut, isGuest } = useAuth();
   const [name, setName] = useState(
     profile.name || (user?.user_metadata?.full_name as string) || "",
@@ -24,6 +26,39 @@ export function ProfileChapter() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
+  const [retaking, setRetaking] = useState(false);
+
+  const handleRetakeTest = async () => {
+    setRetaking(true);
+    updateProfile({
+      onboarding_complete: false,
+      mbti_personality: undefined,
+      mbti_scores: undefined,
+    });
+    if (!isDemoMode && supabase && user) {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase.from("profiles") as any)
+          .update({
+            onboarding_complete: false,
+            mbti_personality: null,
+            mbti_scores: null,
+            emotional_profile: {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              ...((profile as any).emotional_profile || {}),
+              onboarding_complete: false,
+              mbti_personality: null,
+              mbti_scores: null,
+            },
+          })
+          .eq("id", user.id);
+      } catch (err) {
+        console.warn("Failed to reset onboarding in database:", err);
+      }
+    }
+    setRetaking(false);
+    exitBook();
+  };
 
   const affirmation = AFFIRMATIONS[new Date().getDate() % AFFIRMATIONS.length];
   const totalEntries = memories.length;
@@ -85,6 +120,20 @@ export function ProfileChapter() {
         <p className="handwritten text-ink-soft text-lg mt-1">
           carrier of {m.label.toLowerCase()} skies
         </p>
+        {profile.mbti_personality && MBTI_TYPES[profile.mbti_personality] && (
+          <div
+            className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider text-white"
+            style={{
+              background: MBTI_TYPES[profile.mbti_personality].gradient,
+              boxShadow: `0 4px 12px ${MBTI_TYPES[profile.mbti_personality].color}40`,
+            }}
+          >
+            <Sparkles className="w-3 h-3" />
+            <span>
+              {profile.mbti_personality} · {MBTI_TYPES[profile.mbti_personality].title}
+            </span>
+          </div>
+        )}
         {user?.email && <p className="text-xs text-ink/40 mt-1">{user.email}</p>}
         <p className="handwritten text-ink-soft/50 text-sm mt-1">here since {joinedDate}</p>
 
@@ -176,6 +225,47 @@ export function ProfileChapter() {
             </span>
           </motion.button>
         </div>
+
+        {profile.mbti_personality && MBTI_TYPES[profile.mbti_personality] && (
+          <div
+            className="p-5 rounded-xl space-y-3 text-ink relative overflow-hidden"
+            style={{
+              background: "linear-gradient(180deg, oklch(0.96 0.04 80), oklch(0.9 0.06 75))",
+              boxShadow: "0 6px 18px -8px oklch(0.2 0.05 50 / 0.25)",
+              border: "1px solid oklch(0.78 0.13 75 / 0.15)",
+            }}
+          >
+            <div className="flex justify-between items-start">
+              <div>
+                <span className="text-xs uppercase tracking-widest text-ink/50">
+                  your soul signature
+                </span>
+                <h3 className="display text-2xl font-bold tracking-tight text-ink mt-1 flex flex-wrap items-baseline gap-2">
+                  {profile.mbti_personality}
+                  <span className="handwritten text-base text-ink-soft italic font-normal">
+                    the {MBTI_TYPES[profile.mbti_personality].title}
+                  </span>
+                </h3>
+                <p className="text-[10px] uppercase tracking-wider text-ink/40 font-semibold pt-0.5">
+                  {MBTI_TYPES[profile.mbti_personality].category}
+                </p>
+              </div>
+
+              <button
+                onClick={handleRetakeTest}
+                disabled={retaking}
+                className="flex items-center gap-1 text-xs text-ink-soft hover:text-ink transition-colors border border-ink-soft/20 rounded-full px-3 py-1 bg-white/40 cursor-pointer"
+              >
+                <RefreshCw className={`w-3 h-3 ${retaking ? "animate-spin" : ""}`} />
+                <span className="handwritten">{retaking ? "resetting..." : "retake"}</span>
+              </button>
+            </div>
+
+            <p className="text-sm text-ink-soft leading-relaxed border-t border-dashed border-ink-soft/20 pt-3">
+              {MBTI_TYPES[profile.mbti_personality].description}
+            </p>
+          </div>
+        )}
 
         <div className="grid grid-cols-3 gap-3">
           {[

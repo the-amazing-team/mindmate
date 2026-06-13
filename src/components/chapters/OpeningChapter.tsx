@@ -1,16 +1,17 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { motion, AnimatePresence } from "framer-motion";
 import { BookOpen, Heart } from "lucide-react";
 import { useStorybook } from "@/lib/storybook-context";
 import { useAuth } from "@/lib/auth-context";
 import { BookCoverLogin } from "@/components/auth/BookCoverLogin";
-import { OnboardingFlow } from "@/components/auth/OnboardingFlow";
+import { PersonalityTestFlow } from "@/components/auth/PersonalityTestFlow";
 import { useState, useEffect } from "react";
 import { supabase, isDemoMode } from "@/lib/supabase";
 
 type OpeningState = "landing" | "book-opening" | "auth" | "onboarding";
 
 export function OpeningChapter() {
-  const { enterBook } = useStorybook();
+  const { enterBook, profile } = useStorybook();
   const { user, isGuest, loading } = useAuth();
   const [state, setState] = useState<OpeningState>("landing");
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
@@ -28,28 +29,51 @@ export function OpeningChapter() {
 
   const checkOnboarding = async () => {
     if (isDemoMode || !supabase || !user) {
+      console.log("CheckOnboarding: Demo mode or no Supabase/user connection. Entering book.");
       enterBook();
       return;
     }
     try {
-      const { data, error } = await supabase!
+      console.log("CheckOnboarding: Querying profiles for user id:", user.id);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = (await supabase!
         .from("profiles")
         .select("onboarding_complete")
         .eq("id", user.id)
-        .maybeSingle();
+        .maybeSingle()) as any;
 
-      if (error) throw error;
+      if (error) {
+        console.error("CheckOnboarding: Supabase error:", error);
+        throw error;
+      }
+
+      console.log("CheckOnboarding: Fetched profiles onboarding status:", data);
 
       if (data?.onboarding_complete) {
+        console.log("CheckOnboarding: Profiles row has onboarding_complete = true. Entering book.");
         enterBook();
       } else {
+        console.log(
+          "CheckOnboarding: Profiles row has onboarding_complete = false or row is missing. Redirecting to onboarding.",
+        );
         // No profile or not complete -> Start onboarding
         setState("onboarding");
         setNeedsOnboarding(true);
       }
     } catch (err) {
-      console.warn("Onboarding check failed, defaulting to book:", err);
-      enterBook();
+      console.warn("Onboarding check failed, falling back to local profile state:", err);
+      if (profile.onboarding_complete) {
+        console.log(
+          "CheckOnboarding: Local profile has onboarding_complete = true. Entering book.",
+        );
+        enterBook();
+      } else {
+        console.log(
+          "CheckOnboarding: Local profile has onboarding_complete = false. Showing onboarding assessment.",
+        );
+        setState("onboarding");
+        setNeedsOnboarding(true);
+      }
     }
   };
 
@@ -340,7 +364,7 @@ export function OpeningChapter() {
               className="paper rounded-2xl p-8 sm:p-10"
               style={{ boxShadow: "var(--shadow-page)" }}
             >
-              <OnboardingFlow onComplete={handleOnboardingComplete} />
+              <PersonalityTestFlow onComplete={handleOnboardingComplete} />
             </div>
           </motion.div>
         )}

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   createContext,
   useCallback,
@@ -182,6 +183,8 @@ export type Profile = {
   signatureMood: Mood;
   joinedAt: number;
   onboarding_complete?: boolean;
+  mbti_personality?: string;
+  mbti_scores?: Record<string, number>;
 };
 
 const defaultProfile: Profile = {
@@ -189,6 +192,8 @@ const defaultProfile: Profile = {
   intention: "to be gentler with myself",
   signatureMood: "calm",
   joinedAt: Date.now(),
+  mbti_personality: undefined,
+  mbti_scores: undefined,
 };
 
 // ---------- Context ----------
@@ -200,6 +205,7 @@ type Ctx = {
   setMood: (m: Mood) => void;
   enteredBook: boolean;
   enterBook: () => void;
+  exitBook: () => void;
   memories: Memory[];
   addMemory: (input: { text: string; source: Memory["source"]; mood?: Mood }) => void;
   clearMemories: () => void;
@@ -238,18 +244,27 @@ export function StorybookProvider({ children }: { children: ReactNode }) {
       data: { subscription },
     } = supabase!.auth.onAuthStateChange(async (event, session) => {
       if (event === "SIGNED_IN" && session?.user) {
-        const { data, error } = await supabase!
+        const { data, error } = (await supabase!
           .from("profiles")
-          .select("intention, signature_mood, onboarding_complete")
+          .select("name, intention, signature_mood, onboarding_complete, emotional_profile")
           .eq("id", session.user.id)
-          .single();
+          .single()) as any;
 
         if (data && !error) {
+          const emotionalProfile = (data.emotional_profile || {}) as any;
+          const pName = data.name || session.user.user_metadata?.full_name || "";
+          const mbti_personality =
+            (data as any).mbti_personality || emotionalProfile.mbti_personality;
+          const mbti_scores = (data as any).mbti_scores || emotionalProfile.mbti_scores;
+
           setProfile((prev) => ({
             ...prev,
+            name: pName,
             intention: data.intention || prev.intention,
             signatureMood: (data.signature_mood as Mood) || prev.signatureMood,
             onboarding_complete: data.onboarding_complete,
+            mbti_personality: mbti_personality || undefined,
+            mbti_scores: mbti_scores || undefined,
           }));
         }
       } else if (event === "SIGNED_OUT") {
@@ -326,6 +341,10 @@ export function StorybookProvider({ children }: { children: ReactNode }) {
         enterBook: () => {
           setEntered(true);
           setChapter("home");
+        },
+        exitBook: () => {
+          setEntered(false);
+          setChapter("opening");
         },
         memories,
         addMemory,
